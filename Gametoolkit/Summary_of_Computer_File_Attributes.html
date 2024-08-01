@@ -1,0 +1,1128 @@
+<!--
+title: 计算机文件属性汇总
+description: 用来快速查询文件属性
+published: 1
+date: 2024-08-01T13:22:02.396Z
+tags: 游戏工具
+editor: ckeditor
+dateCreated: 2024-08-01T13:21:32.761Z
+-->
+
+<h1 class="toc-header" id="计算机文件属性汇总summary-of-computer-file-attributes"> 计算机文件属性汇总Summary of Computer File Attributes</h1>
+<p>来自<a class="is-external-link" href="https://space.bilibili.com/210298091">阿斯特罗乔布斯-哔哩哔哩</a>，有改动。</p>
+<p>使用uestudio 16进制。</p>
+<p>提示：可以点左下角的三个横线收起侧边栏。</p>
+<p>文件头原始文本/标志一栏有乱码是正常的，<span title="你知道的太多了" class="heimu">因为软件也无法正常显示，就直接复制下来。</span></p>
+<div class="table-container"><table>
+<thead>
+<tr>
+<th style="text-align:center">计算机文件格式</th>
+<th style="text-align:center">文件头</th>
+<th style="text-align:center">文件头原始文本/标志</th>
+<th style="text-align:center">备注</th>
+<th style="text-align:center">代表作/备注</th>
+<th style="text-align:center">解包方法</th>
+<th style="text-align:center">补充说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">cpk</td>
+<td style="text-align:center">43 50 4B</td>
+<td style="text-align:center">CPK</td>
+<td style="text-align:center">游戏打包格式</td>
+<td style="text-align:center">虚空幻界、彼岸游境</td>
+<td style="text-align:center">使用garbro、CpkFileBuilder、Noesis等工具解包</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">hca</td>
+<td style="text-align:center">48 43 41</td>
+<td style="text-align:center">HCA</td>
+<td style="text-align:center">criware的音频格式</td>
+<td style="text-align:center">vgm工具箱转换acb或者usm视频的格式</td>
+<td style="text-align:center">foobar2000、格式工厂、ffmpeg</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">acb</td>
+<td style="text-align:center">40 55 54 46</td>
+<td style="text-align:center">@UTF</td>
+<td style="text-align:center">criware的音频打包格式</td>
+<td style="text-align:center">steam刀剑神域系列</td>
+<td style="text-align:center">Foobar2000、vgm工具箱</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">awb</td>
+<td style="text-align:center">41 46 53 32</td>
+<td style="text-align:center">AFS2</td>
+<td style="text-align:center">criware的音频打包格式</td>
+<td style="text-align:center">steam刀剑神域系列</td>
+<td style="text-align:center">Foobar2000、vgm工具箱</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">usm</td>
+<td style="text-align:center">43 52 49 44</td>
+<td style="text-align:center">CRID</td>
+<td style="text-align:center">criware的视频格式</td>
+<td style="text-align:center">原神、崩坏三等很常见的格式</td>
+<td style="text-align:center">vgm工具箱、ffmpeg，一些加密的usm只能通过民间大神开发的工具解包</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">usm</td>
+<td style="text-align:center">30 26 B2 75 8E 66 CF 11</td>
+<td style="text-align:center">0&amp;瞮巉?</td>
+<td style="text-align:center">地雷社游戏的一种视频格式</td>
+<td style="text-align:center">新次元游戏海王星、Trillion</td>
+<td style="text-align:center">实际是wmv视频，修改后缀名为wmv，FFmpeg可转换mkv、mp4</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">unity游戏</td>
+<td style="text-align:center">55 6E 69 74 79 46 53</td>
+<td style="text-align:center">UnityFS</td>
+<td style="text-align:center">unity大多数游戏常见的文件头</td>
+<td style="text-align:center">大多数unity游戏不一一列举</td>
+<td style="text-align:center">assetstudio</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">fsb</td>
+<td style="text-align:center">46 53 42 35</td>
+<td style="text-align:center">FSB5</td>
+<td style="text-align:center">fmod引擎的音频打包格式</td>
+<td style="text-align:center">大多数unity游戏</td>
+<td style="text-align:center">assetstudio解包时选择转换为wav、foobar2000</td>
+<td style="text-align:center">大部分fsb格式的文件头都是FSB5，魔窟冒险(wiiu)这个游戏例外，打乱字节仍可以播放</td>
+</tr>
+<tr>
+<td style="text-align:center">PFS</td>
+<td style="text-align:center">70 66 38</td>
+<td style="text-align:center">pf8</td>
+<td style="text-align:center">未知</td>
+<td style="text-align:center">未记录</td>
+<td style="text-align:center">使用garbro</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">bnk</td>
+<td style="text-align:center">42 4B 48 44</td>
+<td style="text-align:center">BKHD</td>
+<td style="text-align:center">wwise引擎的音频打包格式</td>
+<td style="text-align:center">大多数unity游戏</td>
+<td style="text-align:center">foobar2000</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">pam</td>
+<td style="text-align:center">50 41 4D 46 30 30 34 31</td>
+<td style="text-align:center">PAMF0041</td>
+<td style="text-align:center">未知</td>
+<td style="text-align:center">steam单机游戏的一种视频打包格式</td>
+<td style="text-align:center">vgm工具箱可提取，没使用ffmpeg测试</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">bik</td>
+<td style="text-align:center">42 49 4B 69</td>
+<td style="text-align:center">BIKi</td>
+<td style="text-align:center">bink视频，rad games tool开发的视频格式</td>
+<td style="text-align:center">逆战</td>
+<td style="text-align:center">格式工厂、ffmpeg</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">bk2</td>
+<td style="text-align:center">4B 42 32 6A</td>
+<td style="text-align:center">kb2j</td>
+<td style="text-align:center">bink视频，rad games tool开发的视频格式</td>
+<td style="text-align:center">狂热传说、情热传说、海王星系列游戏</td>
+<td style="text-align:center">radvideo和vgm工具箱，海王星系列的游戏经常伪装成usm格式</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">bk2</td>
+<td style="text-align:center">4B 42 32 69</td>
+<td style="text-align:center">kb2i</td>
+<td style="text-align:center">bink视频，rad games tool开发的视频格式</td>
+<td style="text-align:center">白荆回廊</td>
+<td style="text-align:center">radvideo</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">bk2</td>
+<td style="text-align:center">4B 42 32 6E</td>
+<td style="text-align:center">kb2n</td>
+<td style="text-align:center">bink视频，rad games tool开发的视频格式</td>
+<td style="text-align:center">白荆回廊</td>
+<td style="text-align:center">radvideo</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">bra</td>
+<td style="text-align:center">50 44 41</td>
+<td style="text-align:center">PDA</td>
+<td style="text-align:center">未知</td>
+<td style="text-align:center">妖精剑士F</td>
+<td style="text-align:center">bra音频可尝试用dargon unpacker解包</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">xwb</td>
+<td style="text-align:center">57 42 4E 44</td>
+<td style="text-align:center">WBND</td>
+<td style="text-align:center">地雷社游戏中常见的音频文件打包格式</td>
+<td style="text-align:center">超次元游戏海王星、死亡终局轮回试炼</td>
+<td style="text-align:center">unxwb提取很快，foobar2000提取极慢，如果不是为了更好的音质不建议用foobar2000</td>
+<td style="text-align:center">foobar2000是音频转换工具不是文件提取器，专业不对口，所以很慢</td>
+</tr>
+<tr>
+<td style="text-align:center">exe</td>
+<td style="text-align:center">4D 5A</td>
+<td style="text-align:center">MZ</td>
+<td style="text-align:center">windows应用程序执行文件</td>
+<td style="text-align:center">常见的文件格式</td>
+<td style="text-align:center">7z</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">dll</td>
+<td style="text-align:center">4D 5A</td>
+<td style="text-align:center">MZ</td>
+<td style="text-align:center">windows应用程序扩展文件</td>
+<td style="text-align:center">常见的文件格式</td>
+<td style="text-align:center">7z</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">xp3</td>
+<td style="text-align:center">58 50 33</td>
+<td style="text-align:center">XP3</td>
+<td style="text-align:center">galgame游戏常见的打包格式</td>
+<td style="text-align:center">KARAKARA2</td>
+<td style="text-align:center">可尝试用garbro解包</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">cab</td>
+<td style="text-align:center">4D 53 43 46</td>
+<td style="text-align:center">MSCF</td>
+<td style="text-align:center">Windows的压缩格式</td>
+<td style="text-align:center">装驱动，补丁的目录下面可能会有</td>
+<td style="text-align:center">7z</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">mid</td>
+<td style="text-align:center">4D 54 68 64</td>
+<td style="text-align:center">MThd</td>
+<td style="text-align:center">主机掌机游戏的解包的一种音频格式</td>
+<td style="text-align:center">重装机兵2r、重装机兵3</td>
+<td style="text-align:center">vgmtrans解包nds，使用foobar2000转换</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">moflex</td>
+<td style="text-align:center">4C 32</td>
+<td style="text-align:center">L2</td>
+<td style="text-align:center">3DS游戏的一种视频格式</td>
+<td style="text-align:center">重装机兵4</td>
+<td style="text-align:center">使用ffmpeg转换、格式工厂</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">pmf</td>
+<td style="text-align:center">50 53 4D 46 30 30</td>
+<td style="text-align:center">PSMF00</td>
+<td style="text-align:center">PSP游戏的视频专用打包格式</td>
+<td style="text-align:center">刀剑神域无限时刻、英雄传说空之轨迹</td>
+<td style="text-align:center">使用pmftools转换有声音，有些游戏无法转换，使用ffmpeg转换无声音</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">bcsar</td>
+<td style="text-align:center">43 53 41 52</td>
+<td style="text-align:center">CSAR</td>
+<td style="text-align:center">3DS游戏的一种音频打包格式</td>
+<td style="text-align:center">嘿！皮克敏</td>
+<td style="text-align:center">使用3DS SoundArchiveTool解包</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">bcwav</td>
+<td style="text-align:center">43 57 41 56</td>
+<td style="text-align:center">CWAV</td>
+<td style="text-align:center">3DS游戏bcsar文件的音频解包格式</td>
+<td style="text-align:center">嘿！皮克敏</td>
+<td style="text-align:center">foobar2000</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">bcstm</td>
+<td style="text-align:center">43 53 54 4</td>
+<td style="text-align:center">CSTM</td>
+<td style="text-align:center">3DS游戏的一种音频打包格式</td>
+<td style="text-align:center">嘿！皮克敏</td>
+<td style="text-align:center">foobar2000、ffmpeg</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">vag</td>
+<td style="text-align:center">56 41 47 70</td>
+<td style="text-align:center">VAGp</td>
+<td style="text-align:center">psp游戏的一种音频格式</td>
+<td style="text-align:center">英雄传说空之轨迹</td>
+<td style="text-align:center">foobar2000、ffmpeg</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">pck</td>
+<td style="text-align:center">46 69 6C 65 6E 61 6D 65</td>
+<td style="text-align:center">Filename</td>
+<td style="text-align:center">steam单机游戏的一种pck文件</td>
+<td style="text-align:center">超女神信仰诺瓦露、约战凛绪轮回</td>
+<td style="text-align:center">fmodel、umodel输入AES密钥解包</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">pck</td>
+<td style="text-align:center">41 4B 50 4B</td>
+<td style="text-align:center">AKPK</td>
+<td style="text-align:center">unity游戏中使用wwise引擎打包的格式</td>
+<td style="text-align:center">原神、崩坏三</td>
+<td style="text-align:center">除了音频还存储图片，使用dragon unpacker解包</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">at3</td>
+<td style="text-align:center">52 49 46 46</td>
+<td style="text-align:center">RIFF</td>
+<td style="text-align:center">PSP游戏的音频格式，实际上等同于wav、wem</td>
+<td style="text-align:center">我的妹妹不可能那么可爱</td>
+<td style="text-align:center">dragon unpacker解包，改后缀为bnk或wem使用foobar2000转换</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">adx</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">criware的音频格式</td>
+<td style="text-align:center">未记录，usm视频解包的一种音频格式</td>
+<td style="text-align:center">foobar2000</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">ssw</td>
+<td style="text-align:center">58 57 53 46 49 4C 45</td>
+<td style="text-align:center">XWSFILE</td>
+<td style="text-align:center">3ds游戏的一种音频打包格式</td>
+<td style="text-align:center">死或生维度</td>
+<td style="text-align:center">3DS Audio Ripper，提取出bgwav格式的音频</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">ktx</td>
+<td style="text-align:center">AB 4B 54 58 20 31 31 BB</td>
+<td style="text-align:center">獽TX 11?</td>
+<td style="text-align:center">手游中的一种图片格式</td>
+<td style="text-align:center">海岛奇兵</td>
+<td style="text-align:center">TexturePackerGui</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">wmv</td>
+<td style="text-align:center">30 26 B2 75 8E 66 CF 11</td>
+<td style="text-align:center">0&amp;瞮巉?</td>
+<td style="text-align:center">一种视频格式</td>
+<td style="text-align:center">海王星U</td>
+<td style="text-align:center">ffmpeg、格式工厂等</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">ogv</td>
+<td style="text-align:center">4F 67 67 53</td>
+<td style="text-align:center">OggS</td>
+<td style="text-align:center">theora编码，开放免费的视频压缩格式</td>
+<td style="text-align:center">冬日树下的回忆</td>
+<td style="text-align:center">ffmpeg、格式工厂等</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">asar</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">galgame游戏的一种打包格式</td>
+<td style="text-align:center">冬日树下的回忆</td>
+<td style="text-align:center">winasar可以完全解包、dragon unpacker只能提取图片和音频</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">rpa</td>
+<td style="text-align:center">52 50 41</td>
+<td style="text-align:center">RPA</td>
+<td style="text-align:center">galgame游戏的一种打包格式</td>
+<td style="text-align:center">Sakura Succubus 2</td>
+<td style="text-align:center">garbro可以解包、RPA Extract</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">pvr.ccz</td>
+<td style="text-align:center">43 43 5A</td>
+<td style="text-align:center">CCZ</td>
+<td style="text-align:center">一种图片格式</td>
+<td style="text-align:center">三国杀移动版</td>
+<td style="text-align:center">TexturePackerGUI</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">ypf</td>
+<td style="text-align:center">59 50 46</td>
+<td style="text-align:center">YPF</td>
+<td style="text-align:center">galgame游戏的一种视频格式</td>
+<td style="text-align:center">猫忍之心外传</td>
+<td style="text-align:center">使用garbro解包</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">rgss3a</td>
+<td style="text-align:center">52 47 53 53 41 44</td>
+<td style="text-align:center">RGSSAD</td>
+<td style="text-align:center">一种2d rpg游戏的打包格式</td>
+<td style="text-align:center">打包格式     关于我转生变成兽人这档事</td>
+<td style="text-align:center">garbro可以解包</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">mpg</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">mpeg1编码的视频格式</td>
+<td style="text-align:center">G线上的魔王</td>
+<td style="text-align:center">ffmpeg、格式工厂等</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">mp4</td>
+<td style="text-align:center">00 00 00 1C 66 74 79 70 69 73 6F 6D</td>
+<td style="text-align:center">....ftypisom</td>
+<td style="text-align:center">常见的mp4视频</td>
+<td style="text-align:center">白荆回廊</td>
+<td style="text-align:center">ffmpeg、格式工厂等</td>
+<td style="text-align:center">下方显示mvhd</td>
+</tr>
+<tr>
+<td style="text-align:center">m4v</td>
+<td style="text-align:center">00 00 00 18 66 74 79 70 6D 70 34 32</td>
+<td style="text-align:center">....ftypmp42</td>
+<td style="text-align:center">罕见的视频格式</td>
+<td style="text-align:center">圣境之塔</td>
+<td style="text-align:center">ffmpeg、格式工厂</td>
+<td style="text-align:center">没有mvhd</td>
+</tr>
+<tr>
+<td style="text-align:center">nwa</td>
+<td style="text-align:center">02 00 10 00 44 AC</td>
+<td style="text-align:center">....D?</td>
+<td style="text-align:center">罕见的音频格式</td>
+<td style="text-align:center">初恋1／1</td>
+<td style="text-align:center">格式工厂和ffmpeg无效，可以用foobar2000转换</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">arc</td>
+<td style="text-align:center">42 55 52 49 48 4F</td>
+<td style="text-align:center">BURIKO</td>
+<td style="text-align:center">galgame游戏的一种打包格式</td>
+<td style="text-align:center">Arcana Alchemia(炼爱秘仪)</td>
+<td style="text-align:center">garbro提取立绘和视频、音频</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">png</td>
+<td style="text-align:center">89 50 4E 47</td>
+<td style="text-align:center">塒NG</td>
+<td style="text-align:center">一种图片格式</td>
+<td style="text-align:center">各种游戏解包提取的图片格式，不一一列举</td>
+<td style="text-align:center">格式工厂、honeyview、ps、topaz全家桶的降噪、锐化、无损放大</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">npk</td>
+<td style="text-align:center">4E 58 50 4B</td>
+<td style="text-align:center">NXPK</td>
+<td style="text-align:center">网易neox引擎游戏打包的一种格式</td>
+<td style="text-align:center">重装上阵</td>
+<td style="text-align:center">NPKExtractor</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">mp3</td>
+<td style="text-align:center">49 44 33</td>
+<td style="text-align:center">ID3</td>
+<td style="text-align:center">常见音频格式、cocos2d或者一些卡牌手游用到的音频格式</td>
+<td style="text-align:center">小花仙</td>
+<td style="text-align:center">格式工厂、foobar2000、ffmpeg</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">wma</td>
+<td style="text-align:center">30 26 B2 75 8E 66 CF 11</td>
+<td style="text-align:center">0&amp;瞮巉?</td>
+<td style="text-align:center">一种音频格式</td>
+<td style="text-align:center">暂无</td>
+<td style="text-align:center">格式工厂、ffmpeg</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">m4a</td>
+<td style="text-align:center">52 49 46 46</td>
+<td style="text-align:center">....ftypM4A</td>
+<td style="text-align:center">一种音频格式</td>
+<td style="text-align:center">暂无</td>
+<td style="text-align:center">格式工厂、ffmpeg</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">h264</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">一种h264编码的视频格式</td>
+<td style="text-align:center">星空(wiiu)</td>
+<td style="text-align:center">格式工厂和ffmpeg</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">webp</td>
+<td style="text-align:center">52 49 46 46</td>
+<td style="text-align:center">RIFF</td>
+<td style="text-align:center">谷歌开发的一种高压缩图片格式</td>
+<td style="text-align:center">暂无</td>
+<td style="text-align:center">格式工厂</td>
+<td style="text-align:center"><a class="is-external-link" href="https://developers.google.cn/speed/webp/download?hl=zh-cn">Google&nbsp;Webp</a><br><br><a class="is-external-link" href="https://codecpack.co/download/WebP-Codec-for-Windows.html">WebP Windows CODEC</a></td>
+</tr>
+<tr>
+<td style="text-align:center">PSS</td>
+<td style="text-align:center">00 00 01 BA</td>
+<td style="text-align:center">...?</td>
+<td style="text-align:center">PS2游戏的视频格式</td>
+<td style="text-align:center">多浪迪警官3保护者</td>
+<td style="text-align:center">vgm工具箱、格式工厂、ffmpeg、cube media player</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">ss2</td>
+<td style="text-align:center">53 53 68 64</td>
+<td style="text-align:center">SShd</td>
+<td style="text-align:center">PS2游戏PSS视频文件分离的音频格式</td>
+<td style="text-align:center">多浪迪警官3保护者</td>
+<td style="text-align:center">格式工厂、ffmpeg</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">iso</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">PS2游戏rom</td>
+<td style="text-align:center">多浪迪警官3保护者</td>
+<td style="text-align:center">vgm工具箱解压、7Z</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">iso</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">PSP游戏rom</td>
+<td style="text-align:center">空之轨迹、我的妹妹不可能那么可爱</td>
+<td style="text-align:center">7Z</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">ckb</td>
+<td style="text-align:center">63 6B 6D 6B</td>
+<td style="text-align:center">ckmb</td>
+<td style="text-align:center">一种音频打包格式</td>
+<td style="text-align:center">刀剑神域记忆重组</td>
+<td style="text-align:center">foobar2000</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">snd</td>
+<td style="text-align:center">4F 67 67 53</td>
+<td style="text-align:center">OggS</td>
+<td style="text-align:center">一种音频格式</td>
+<td style="text-align:center">约战凛绪轮回</td>
+<td style="text-align:center">foobar2000、格式工厂、ffmpeg</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">ogg</td>
+<td style="text-align:center">4F 67 67 53</td>
+<td style="text-align:center">OggS</td>
+<td style="text-align:center">一种音频格式</td>
+<td style="text-align:center">Areaea</td>
+<td style="text-align:center">foobar2000、格式工厂、ffmpeg</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">wav</td>
+<td style="text-align:center">52 49 46 46</td>
+<td style="text-align:center">RIFF</td>
+<td style="text-align:center">一种音频格式</td>
+<td style="text-align:center">很常见，不列举</td>
+<td style="text-align:center">foobar2000、格式工厂、ffmpeg可以转换，文件头后面是wave</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">wem</td>
+<td style="text-align:center">52 49 46 46</td>
+<td style="text-align:center">RIFF</td>
+<td style="text-align:center">一种音频格式</td>
+<td style="text-align:center">unity和虚幻引擎游戏中常见的文件，不列举</td>
+<td style="text-align:center">foobar2000、格式工厂、ffmpeg可以转换，文件头后面是wave</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">bank</td>
+<td style="text-align:center">52 49 46 46</td>
+<td style="text-align:center">RIFF</td>
+<td style="text-align:center">一种音频格式</td>
+<td style="text-align:center">白荆回廊</td>
+<td style="text-align:center">foobar2000、格式工厂、ffmpeg可以转换，文件头后面是fev</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">avi</td>
+<td style="text-align:center">52 49 46 46</td>
+<td style="text-align:center">RIFF</td>
+<td style="text-align:center">一种视频格式</td>
+<td style="text-align:center">英雄传说：闪之轨迹</td>
+<td style="text-align:center">foobar2000、格式工厂、ffmpeg可以转换，文件头后面是avi</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">at9</td>
+<td style="text-align:center">52 49 46 46</td>
+<td style="text-align:center">RIFF</td>
+<td style="text-align:center">一种音频格式</td>
+<td style="text-align:center">psv游戏中的一种音频格式</td>
+<td style="text-align:center">foobar2000、格式工厂、ffmpeg</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">zip</td>
+<td style="text-align:center">50 4B</td>
+<td style="text-align:center">PK</td>
+<td style="text-align:center">一种可直接解压的PK类文件</td>
+<td style="text-align:center">常见的压缩包</td>
+<td style="text-align:center">很常见，电脑使用7z、手机使用MT管理器解压</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">apk</td>
+<td style="text-align:center">50 4B</td>
+<td style="text-align:center">PK</td>
+<td style="text-align:center">一种可直接解压的PK类文件</td>
+<td style="text-align:center">安卓手机安装包</td>
+<td style="text-align:center">很常见，电脑使用7z、手机使用MT管理器解压</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">xapk</td>
+<td style="text-align:center">50 4B</td>
+<td style="text-align:center">PK</td>
+<td style="text-align:center">一种可直接解压的PK类文件</td>
+<td style="text-align:center">国外安卓游戏安装包</td>
+<td style="text-align:center">很常见，电脑使用7z、手机使用MT管理器解压</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">obb</td>
+<td style="text-align:center">50 4B</td>
+<td style="text-align:center">PK</td>
+<td style="text-align:center">一种可直接解压的PK类文件</td>
+<td style="text-align:center">国外安卓游戏的数据包</td>
+<td style="text-align:center">很常见，电脑使用7z、手机使用MT管理器解压</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">fb2k-component</td>
+<td style="text-align:center">fb2k-component</td>
+<td style="text-align:center">PK</td>
+<td style="text-align:center">一种可直接解压的PK类文件</td>
+<td style="text-align:center">foobar2000的组件</td>
+<td style="text-align:center">不解包的根本没见过，电脑使用7z、手机使用MT管理器解压</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">ipa</td>
+<td style="text-align:center">50 4B</td>
+<td style="text-align:center">PK</td>
+<td style="text-align:center">一种可直接解压的PK类文件</td>
+<td style="text-align:center">苹果手机的安装包</td>
+<td style="text-align:center">虽然没用过苹果手机，但它也是一种pk文件，直接解压就行</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">pak</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">虚幻引擎游戏的打包格式</td>
+<td style="text-align:center">白荆回廊、幻塔</td>
+<td style="text-align:center">此pak文件或大或小，大的十几二十多G，小的几十kb，fmodel、umodel输入AES密钥解包</td>
+<td style="text-align:center">有的游戏不设置密钥，如魔道兵装、碧蓝航线</td>
+</tr>
+<tr>
+<td style="text-align:center">pak</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">世纪天成csol的资产格式</td>
+<td style="text-align:center">反恐精英online</td>
+<td style="text-align:center">此pak文件较小，把pak拖到cospak上解包</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">pak</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">世纪天成csol的资产格式</td>
+<td style="text-align:center">怪物猎人崛起</td>
+<td style="text-align:center">此pak包巨大，30多个G，使用retool解包</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">pak</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">任天堂wiiu平台的一种资产文件</td>
+<td style="text-align:center">唐老鸭历险记重制版(wiiu平台)</td>
+<td style="text-align:center">此pak文件较小，最大几十mb，最小几十kb</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">nds</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">nds游戏rom</td>
+<td style="text-align:center">重装机兵2r、重装机兵3</td>
+<td style="text-align:center">使用vgmtrans可提取音频</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">STR</td>
+<td style="text-align:center">00 FF FF FF FF FF FF FF FF FF FF</td>
+<td style="text-align:center">空白乱码</td>
+<td style="text-align:center">PS游戏ISOrom解包后的一种文件类型</td>
+<td style="text-align:center">龙珠GT 决战最终回合</td>
+<td style="text-align:center">jpsxdec</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">au</td>
+<td style="text-align:center">2E 73 6E 64</td>
+<td style="text-align:center">.snd</td>
+<td style="text-align:center">PS游戏STR文件解包后的一种音频格式</td>
+<td style="text-align:center">龙珠GT 决战最终回合</td>
+<td style="text-align:center">格式工厂、foobar2000、ffmpeg</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">aif</td>
+<td style="text-align:center">46 4F 52 4D</td>
+<td style="text-align:center">FORM</td>
+<td style="text-align:center">PS游戏STR文件解包后的一种音频格式</td>
+<td style="text-align:center">龙珠GT 决战最终回合</td>
+<td style="text-align:center">格式工厂、foobar2000、ffmpeg</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">btsnd</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">wiiu游戏loadiine格式的一种音频格式</td>
+<td style="text-align:center">星空(wiiu)</td>
+<td style="text-align:center">有些游戏可用foobar2000播放，格式工厂和ffmpeg无效</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">bfstm</td>
+<td style="text-align:center">46 53 54 4D</td>
+<td style="text-align:center">FSTM</td>
+<td style="text-align:center">wiiu游戏loadiine格式的一种音频格式</td>
+<td style="text-align:center">NES Remix Pack</td>
+<td style="text-align:center">格式工厂、foobar2000、ffmpeg</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">bfsar</td>
+<td style="text-align:center">46 53 41 52</td>
+<td style="text-align:center">FSAR</td>
+<td style="text-align:center">wiiu游戏loadiine格式的一种音频打包格式</td>
+<td style="text-align:center">NES Remix Pack</td>
+<td style="text-align:center">BFSAR_Split</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">bfwav</td>
+<td style="text-align:center">46 57 41 56</td>
+<td style="text-align:center">FWAV</td>
+<td style="text-align:center">bfsar文件解包的一种音频格式</td>
+<td style="text-align:center">NES Remix Pack</td>
+<td style="text-align:center">EveryFileExplorer和foobar2000转换为wav</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">bfgrp</td>
+<td style="text-align:center">46 47 52 50</td>
+<td style="text-align:center">FGRP</td>
+<td style="text-align:center">wiiu游戏中的sarc解包的音频文件</td>
+<td style="text-align:center">蘑菇队长(wiiu)</td>
+<td style="text-align:center">删除FWAV前面的字节保存为bfwav，再使用EveryFileExplorer转换为wav格式</td>
+<td style="text-align:center">不删除任何字节可以使用CubeMediaPlayer2播放，但是全是噪音</td>
+</tr>
+<tr>
+<td style="text-align:center">bfseq</td>
+<td style="text-align:center">46 53 45 51</td>
+<td style="text-align:center">FSEQ</td>
+<td style="text-align:center">wiiu游戏中的bfsar解包的音频文件</td>
+<td style="text-align:center">动物之森Amiibo节日(wiiu)</td>
+<td style="text-align:center">删除FWAV前面的字节保存为bfwav，再使用EveryFileExplorer转换为wav格式</td>
+<td style="text-align:center">不删除任何字节可以使用CubeMediaPlayer2播放，但是全是噪音</td>
+</tr>
+<tr>
+<td style="text-align:center">sarc</td>
+<td style="text-align:center">53 41 52 43</td>
+<td style="text-align:center">SARC</td>
+<td style="text-align:center">wiiu游戏中的一种文件打包格式</td>
+<td style="text-align:center">任天堂大陆(wiiu平台)</td>
+<td style="text-align:center">把sarc文件拖到sarc_tool.exe上即可解包</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">dspadpcm</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">wiiu游戏中的sarc文件解包的音频格式</td>
+<td style="text-align:center">暂无，wiiu游戏sarc文件可以解出来</td>
+<td style="text-align:center">使用Audacity转换成wav、mp3等格式</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">wud</td>
+<td style="text-align:center">57 55 50</td>
+<td style="text-align:center">WUP</td>
+<td style="text-align:center">wiiu游戏rom的一种打包格式</td>
+<td style="text-align:center">异度之刃x(wiiu平台)</td>
+<td style="text-align:center">Uwizard输入密钥转换成loadiine格式，解完就像pc单机游戏了</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">wux</td>
+<td style="text-align:center">57 55 58</td>
+<td style="text-align:center">WUX</td>
+<td style="text-align:center">wiiu游戏wud格式rom压缩后的一种打包格式</td>
+<td style="text-align:center">异度之刃x(wiiu平台)</td>
+<td style="text-align:center">未知，一般都是提取loadiine格式的资源</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">cso</td>
+<td style="text-align:center">43 49 53 4F</td>
+<td style="text-align:center">CISO</td>
+<td style="text-align:center">ISO镜像转换而来的一种rom格式</td>
+<td style="text-align:center">女神异闻录persona(PSP平台)</td>
+<td style="text-align:center">未知，一般都是提取ISO格式的rom</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">PBP</td>
+<td style="text-align:center">00 50 42 50</td>
+<td style="text-align:center">.PBP</td>
+<td style="text-align:center">ISO镜像转换而来的一种rom格式</td>
+<td style="text-align:center">女神异闻录persona(PSP平台)</td>
+<td style="text-align:center">未知，一般都是提取ISO格式的rom</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">rar</td>
+<td style="text-align:center">52 61 72 21</td>
+<td style="text-align:center">Rar！</td>
+<td style="text-align:center">一种压缩格式</td>
+<td style="text-align:center">常见的压缩包，文件打包格式的一种</td>
+<td style="text-align:center">7z，Winrar</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">ssnd</td>
+<td style="text-align:center">53 53 4E 44</td>
+<td style="text-align:center">SSND</td>
+<td style="text-align:center">3DS游戏的一种音频打包格式</td>
+<td style="text-align:center">真女神转生深渊奇异之旅</td>
+<td style="text-align:center">3DS Audio Ripper，提取出bcwav格式的音频</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">MIB</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">PS2游戏的一种音频格式</td>
+<td style="text-align:center">多浪迪警官3保护者</td>
+<td style="text-align:center">格式工厂和ffmpeg无效，可以用foobar2000播放和转换</td>
+<td style="text-align:center">第一行字节全是0，尝试删除之后仍可以正常播放，音频时长变成原来的2倍</td>
+</tr>
+<tr>
+<td style="text-align:center">PKG</td>
+<td style="text-align:center">7F 50 4B 47</td>
+<td style="text-align:center">.PKG</td>
+<td style="text-align:center">PS3游戏的rom格式</td>
+<td style="text-align:center">火箭鸟 铁汉雄鸡</td>
+<td style="text-align:center">PS3GameExtractor</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">msf</td>
+<td style="text-align:center">4D 53 46 43</td>
+<td style="text-align:center">MSFC</td>
+<td style="text-align:center">PS3游戏的一种音频格式</td>
+<td style="text-align:center">火箭鸟 铁汉雄鸡</td>
+<td style="text-align:center">foobar2000、格式工厂、ffmpeg</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">gz</td>
+<td style="text-align:center">1F 8B 08 00</td>
+<td style="text-align:center">.?..</td>
+<td style="text-align:center">一种压缩格式</td>
+<td style="text-align:center">火箭鸟 铁汉雄鸡</td>
+<td style="text-align:center">7z</td>
+<td style="text-align:center">linux的一种归档格式</td>
+</tr>
+<tr>
+<td style="text-align:center">pac</td>
+<td style="text-align:center">44 57 5F 50 41 43 4B</td>
+<td style="text-align:center">DW_PACK</td>
+<td style="text-align:center">地雷社游戏的一种文件打包格式</td>
+<td style="text-align:center">海王星系列</td>
+<td style="text-align:center">NR2_unpacker-PAC</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">nsa</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">ONScripter是一个通用GalGame引擎，rom格式为nsa</td>
+<td style="text-align:center">伊甸</td>
+<td style="text-align:center">garbro可以解包</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">cdi</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">世嘉DC游戏rom格式</td>
+<td style="text-align:center">生化危机3(DC平台)</td>
+<td style="text-align:center">软碟通</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">pvr</td>
+<td style="text-align:center">47 42 49 58</td>
+<td style="text-align:center">GBIX</td>
+<td style="text-align:center">一种图片格式</td>
+<td style="text-align:center">生化危机3(DC平台)、逆战模型解包的贴图</td>
+<td style="text-align:center">TexturePackerGui，逆战的可以正常转换，生化危机3无效</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">jpg</td>
+<td style="text-align:center">FF E8 FF E0 00 10 4A 46 49</td>
+<td style="text-align:center">(前4位乱码).JFIF</td>
+<td style="text-align:center">一种图片格式</td>
+<td style="text-align:center">生化危机3(DC平台)</td>
+<td style="text-align:center">格式工厂</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">gif</td>
+<td style="text-align:center">47 49 46</td>
+<td style="text-align:center">GIF</td>
+<td style="text-align:center">一种图片格式</td>
+<td style="text-align:center">生化危机3(DC平台)</td>
+<td style="text-align:center">格式工厂</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">afs</td>
+<td style="text-align:center">41 46 53</td>
+<td style="text-align:center">AFS</td>
+<td style="text-align:center">一种文件打包格式</td>
+<td style="text-align:center">生化危机3(DC平台)、命运石之门(PSP)</td>
+<td style="text-align:center">AFSExplorer、SimpleAFSExtractor、vgm工具箱</td>
+<td style="text-align:center">不推荐用AFSExplorer,这里最好用的是SimpleAFSExtractor，可以解出vgm工具箱解不了的</td>
+</tr>
+<tr>
+<td style="text-align:center">sfd</td>
+<td style="text-align:center">00 00 01 BA</td>
+<td style="text-align:center">...?</td>
+<td style="text-align:center">一种视频格式</td>
+<td style="text-align:center">生化危机3(DC平台)</td>
+<td style="text-align:center">vgm工具箱、格式工厂</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">mdl</td>
+<td style="text-align:center">49 44 53 54</td>
+<td style="text-align:center">IDST</td>
+<td style="text-align:center">csol的模型文件</td>
+<td style="text-align:center">csol、cs1.6</td>
+<td style="text-align:center">HLMV1.3.5汉化版、Noesis</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">nar</td>
+<td style="text-align:center">4E 41 52</td>
+<td style="text-align:center">NAR</td>
+<td style="text-align:center">csol除了pak之外的一种打包格式</td>
+<td style="text-align:center">csol</td>
+<td style="text-align:center">Nar extractor</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">mca</td>
+<td style="text-align:center">02 00 00 00 01 00 00 01</td>
+<td style="text-align:center">........</td>
+<td style="text-align:center">一种音频格式</td>
+<td style="text-align:center">怪物猎人</td>
+<td style="text-align:center">foobar2000</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">wbfs</td>
+<td style="text-align:center">57 42 46 53</td>
+<td style="text-align:center">WBFS</td>
+<td style="text-align:center">任天堂wii平台的rom格式</td>
+<td style="text-align:center">斗真传</td>
+<td style="text-align:center">WiiBackupManager或者wbfstoiso转换成iso格式</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">iso</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">任天堂wii游戏wbfs格式的rom转换的一种格式</td>
+<td style="text-align:center">斗真传</td>
+<td style="text-align:center">WIIScrubber只能转换iso格式的wii游戏rom</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">thp</td>
+<td style="text-align:center">54 48 50</td>
+<td style="text-align:center">THP</td>
+<td style="text-align:center">任天堂wii平台的一种音频格式</td>
+<td style="text-align:center">斗真传</td>
+<td style="text-align:center">格式工厂可以转换，vgm工具箱可以分离音频视频</td>
+<td style="text-align:center">vgm工具箱分离的音频只能用foobar转换，视频可用格式工厂转换，强大的ffmpeg完全没用</td>
+</tr>
+<tr>
+<td style="text-align:center">brstm</td>
+<td style="text-align:center">52 53 54 4D</td>
+<td style="text-align:center">RSTM</td>
+<td style="text-align:center">任天堂wii平台的一种音频格式</td>
+<td style="text-align:center">斗真传</td>
+<td style="text-align:center">格式工厂、ffmpeg、foobar2000</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">brsar</td>
+<td style="text-align:center">52 53 41 52</td>
+<td style="text-align:center">RSAR</td>
+<td style="text-align:center">任天堂wii平台的一种音频打包格式</td>
+<td style="text-align:center">斗真传</td>
+<td style="text-align:center">vgm工具箱advanced cutter/offset finder的RWAV Streams</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">rwav(brwav)</td>
+<td style="text-align:center">52 57 41 56</td>
+<td style="text-align:center">RWAV</td>
+<td style="text-align:center">任天堂wii平台的brsar文件解包的音频格式</td>
+<td style="text-align:center">斗真传</td>
+<td style="text-align:center">foobar2000</td>
+<td style="text-align:center">虽然解出来是rwav，其实前面加个b改成brwav仍然可以正常播放,参考3ds的bcwav和wiiu的bfwav</td>
+</tr>
+<tr>
+<td style="text-align:center">arc</td>
+<td style="text-align:center">55 AA 38 2D</td>
+<td style="text-align:center">U?-.</td>
+<td style="text-align:center">任天堂wii平台的档案文件</td>
+<td style="text-align:center">斗真传</td>
+<td style="text-align:center">EveryFileExplorer</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">POD</td>
+<td style="text-align:center">50 40 44 35</td>
+<td style="text-align:center">POD5</td>
+<td style="text-align:center">微软xbox360平台的一种文件打包方式</td>
+<td style="text-align:center">星球大战原力释放2</td>
+<td style="text-align:center">dragon unpacker</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">VPK</td>
+<td style="text-align:center">50 4B</td>
+<td style="text-align:center">PK</td>
+<td style="text-align:center">PSV游戏rom的格式</td>
+<td style="text-align:center">刀剑神域虚空断章(psv)</td>
+<td style="text-align:center">7z解压</td>
+<td style="text-align:center">此vpk非彼vpk，起源引擎cs的vpk不能这样解</td>
+</tr>
+<tr>
+<td style="text-align:center">bcmdl</td>
+<td style="text-align:center">43 47 46 58</td>
+<td style="text-align:center">CGFX</td>
+<td style="text-align:center">3DS游戏的一种模型文件</td>
+<td style="text-align:center">重装机兵4</td>
+<td style="text-align:center">EveryFileExplorer</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">bctex</td>
+<td style="text-align:center">43 47 46 58</td>
+<td style="text-align:center">CGFX</td>
+<td style="text-align:center">3DS游戏的一种图片格式</td>
+<td style="text-align:center">重装机兵4</td>
+<td style="text-align:center">EveryFileExplorer</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">bin</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">不固定</td>
+<td style="text-align:center">PS1游戏的一种rom格式</td>
+<td style="text-align:center">最终幻想8</td>
+<td style="text-align:center">UltraISO</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">img</td>
+<td style="text-align:center">3B 03 00 00</td>
+<td style="text-align:center">；...</td>
+<td style="text-align:center">PS1游戏bin镜像解包后的一种文件</td>
+<td style="text-align:center">最终幻想8</td>
+<td style="text-align:center">jpsxdec</td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">ahx</td>
+<td style="text-align:center">80 00 00 20</td>
+<td style="text-align:center">€..</td>
+<td style="text-align:center">afs文件里解出的一种音频格式</td>
+<td style="text-align:center">命运石之门(PSP)</td>
+<td style="text-align:center">foobar2000、格式工厂支持转换，ffmpeg无效</td>
+<td style="text-align:center"></td>
+</tr>
+</tbody>
+</table></div>
