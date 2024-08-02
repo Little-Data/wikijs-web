@@ -2,7 +2,7 @@
 title: 主页
 description: 您看到的第一个页面
 published: 1
-date: 2024-08-01T13:16:07.649Z
+date: 2024-08-02T13:11:04.212Z
 tags: 
 editor: markdown
 dateCreated: 2024-07-31T14:45:47.539Z
@@ -24,6 +24,11 @@ dateCreated: 2024-07-31T14:45:47.539Z
 {.links-list}
 
 太复杂？可以使用`Visual Editor`来满足基本需求。
+
+# 友情链接
+
+- [Bilibili*阿斯特罗乔布斯 | 慷慨提供大量工具*](https://space.bilibili.com/210298091)
+{.links-list}
 
 # 关注我
 
