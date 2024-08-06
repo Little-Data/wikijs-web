@@ -2,8 +2,8 @@
 title: Markdown语法格式
 description: 帮助您使用Markdown语法来编辑文档
 published: 1
-date: 2024-08-01T12:56:59.706Z
-tags: 帮助, markdown语法, 文档编辑
+date: 2024-08-06T05:21:46.313Z
+tags: markdown语法, 帮助, 文档编辑
 editor: markdown
 dateCreated: 2024-08-01T12:56:59.706Z
 ---
@@ -182,6 +182,14 @@ Consectetur ![adipiscing](/link/to/image.jpg) elit    行内图片
 
 也可以使用其他单位，如 % 有时需要把图像填充满：
 ![Image](/link/to/image.jpg =100%x)
+
+对于图片对齐，需使用<img>标签
+<img src='https://123/123.png' align='right' width="30%" height="30%"/>
+其中align为对齐方式，有如下几种：
+left  靠左
+right 靠右
+middle 居中
+width和height为宽和高，数值可以是百分数或者是具体数字。
 ```
 
 # 行内代码
