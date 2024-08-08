@@ -2,8 +2,8 @@
 title: 在Debian 12上安装Dokuwki（使用Apache服务）
 description: 
 published: 1
-date: 2024-08-08T09:21:34.984Z
-tags: 服务器, debian 12
+date: 2024-08-08T09:27:17.467Z
+tags: debian 12, 服务器
 editor: markdown
 dateCreated: 2024-08-08T09:21:34.984Z
 ---
@@ -120,7 +120,7 @@ a2enmod proxy_fcgi setenvif
 a2enconf php8.2-fpm
 ```
 
-> 在安装和启用模块后都要[重启Apache](#重启Apache)！
+> 在安装和启用模块后都要[重启Apache](#重启apache)！
 > php后续可能会更新，版本号会更改，请视情况更改命令内的版本号。
 {.is-warning}
 
@@ -184,7 +184,7 @@ Require all granted
 a2enmod rewrite
 ```
 
-[重启Apache](#重启Apache)
+[重启Apache](#重启apache)
 
 访问`<你的域名或IP>/install.php`来开始安装。
 
@@ -218,7 +218,7 @@ SSLCertificateKeyFile   /xxx/xxx/xxx.key    #证书密钥目录，后缀名可�
 a2ensite default-ssl
 ```
 
-[重启Apache](#重启Apache)
+[重启Apache](#重启apache)
 
 > （可选）http自动跳转https：
 > 先打开dokuwiki站点目录，找到''.htaccess''文件。
@@ -228,7 +228,7 @@ a2ensite default-ssl
 > RewriteCond %{HTTPS} !=on
 > ```
 > 
-> [重启Apache](#重启Apache)
+> [重启Apache](#重启apache)
 > 由于您浏览器缓存问题，访问http时不会自动跳转到https。可以使用无痕浏览来模拟新访客访问http来测试效果。
 {.is-info}
 
@@ -265,7 +265,7 @@ post_max_size = 8M    #修改数字
 upload_max_filesize = 2M      #修改数字
 ```
 
-[重启Apache](#重启Apache)
+[重启Apache](#重启apache)
 
 ## 解决dokuwiki中文文件名乱码问题
 
@@ -341,4 +341,4 @@ RewriteRule ^index.php$               doku.php
 date.timezone = "PRC"    #记得将; 删除
 ```
 
-[重启Apache](#重启Apache)
+[重启Apache](#重启apache)
