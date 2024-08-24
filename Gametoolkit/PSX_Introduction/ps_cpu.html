@@ -1,0 +1,864 @@
+<!--
+title: 中央处理器（CPU） R3000A
+description: 
+published: 1
+date: 2024-08-24T10:13:26.150Z
+tags: 文档, psx
+editor: code
+dateCreated: 2024-08-24T10:13:26.150Z
+-->
+
+<title>中央处理器</title>
+<h1><font color="#FF0000">中央处理器（CPU） R3000A</font></h1>           
+<p>PSX采用的R3000A芯片有些小变动，由MIPS变成LSI，它是一个32位的缩减指令集控制器（RISC）处理器，主频是33.8688MHz，每秒钟能处理3千万条指令。它有4KB的指令缓存、1KB的数据缓存和传输率为132MB/秒的总线，内含一个算术/逻辑运算器（ALU）和一个移位器，但缺少一个浮点运算器（FPU）。在R3000A里，一个字是32位，半字是16位，字节是8位的。PSX里有2个协处理器Cop，Cop0是系统控制器，Cop1是图形处理器（GPU）。<h5>指令缓存：</h5>
+<p>（4KB缓存的管道尺寸为16字节）。可以获得80％左右的命中率，缓存是物理寻址和标识的。
+<h5>数据缓存：</h5>
+<p>（1KB缓存的管道尺寸为4字节）。也可以获得80％左右的命中率，也是物理寻址和标识的。这是写通缓存，可以保持缓存内容和主存内容一致，为了减少写数据时CPU的停顿，总线接口单元用了一个4深度的写缓冲器以CPU的速度来捕获地址和数据，允许用较慢的速度来写入主存而不影响CPU。
+<h5>通用寄存器：</h5>
+<p>R3000A使用32个32位的寄存器，一个32位的指令指针，两个32位的乘除寄存器，见下表：
+<table border="1" cellspacing="0">
+  <tr><td>寄存器号码<td>名字<td>用法
+  <tr><td>R0<td>ZR<td>常量 0          
+  <tr><td>R1<td>AT<td>为汇编程序保留
+  <tr><td>R2-R3 <td>V0-V1<td>计算结果和表达式赋值
+  <tr> <td>R4-R7 <td>A0-A3<td>自变量
+  <tr><td>R8-R15<td>T0-T7<td>临时变量
+  <tr><td>R16-R23<td>S0-S7<td>全局变量
+  <tr><td>R24-R25<td>T8-T9<td>额外的临时变量
+  <tr><td>R26-R27<td>K0-K1<td>为操作系统核心保留
+  <tr><td>R28<td>GP<td>全局指针
+  <tr><td>R29<td>SP<td>栈指针
+  <tr><td>R30<td>FP<td>页面指针
+  <tr><td>R31 <td>RA<td>返回地址
+</table>
+<h5>乘除结果寄存器和指令指针:</h5>
+<table border="1" cellspacing="0">
+  <tr><td>名字<td>描述
+  <tr><td>HI<td>乘法运算64位结果的高32位，或除法运算的余数
+  <tr><td>LO<td>乘法运算64位结果的低32位，或除法运算的商
+  <tr><td>PC<td>指令指针
+</table>
+<p>尽管每个寄存器都有自己的名字，但它们都是一样的，除了2个：R0（ZR）是由硬件指定永远为0的；R31（RA）用于Link或Jump到子程序时保存返回地址，它可以象普通寄存器那样被其他指令读写。
+<p>　<h3><font color="#FF00FF"><a name="R3000A指令集">R3000A指令集</a></font></h3>
+<p>指令编码是基于MIPS结构的，这表示了有三种类型指令编码：<p>I类型（Immediate立即）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>op
+    <td>rs
+    <td>rt
+    <td>immediate
+</table>
+<p>J类型（Jump跳转）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>op
+    <td>target
+</table>
+<p>R类型（Register寄存器）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>op
+    <td>rs
+    <td>rt
+    <td>rd
+    <td>shamt
+    <td>funct
+</table>
+<p>其中：
+<table border="1" cellspacing="0">
+  <tr>
+    <td>op
+    <td>6位的操作码
+  <tr>
+    <td>rs
+    <td>5位的源寄存器指示器
+  <tr>
+    <td>rt
+    <td>5位的目标寄存器或者跳转条件
+  <tr>
+    <td>immediate
+    <td>16位的立即数，或者跳转或者替换地址
+  <tr>
+    <td>target
+    <td>26位跳转目标地址
+  <tr>
+    <td>rcl
+    <td>5位目标寄存器指示器
+  <tr>
+    <td>shamt
+    <td>5位的移位总数
+  <tr>
+    <td>funct
+    <td>6位的函数段
+</table>
+<p>R3000A指令可以分为下面几个基本组：
+<p>装入/储存指令：在内存和通用寄存器之间移动数据，是I类型指令。唯一的寻址模式是寄存器＋带符号立即数偏移寻址，这使得可以直接使用3种不同的寻址模式：寄存器＋偏移、寄存器直接和立即数。
+<p>算术指令：对寄存器执行算术，逻辑和移位操作，当源操作数和结果都是通用寄存器时，是R类型；当源操作数中有一个是16位立即数时，是R类型指令。计算指令使用3个地址格式，所以操作不必影响到源寄存器的内容。
+<p>跳转和分支指令：改变程序的控制流。当跳转目标地址是联合一个26位立即数和4位指令指针得到的页面绝对地址，是J类型指令，用于调用子程序；当目标地址是通用寄存器中的32位值时，是R类型，通常用来返回和快速结束；分支指令是I类型，目标地址是指令指针＋16位偏移。跳转和链接指令在寄存器R31保存一个返回地址，通常用于调用子程序，子程序的返回地址就存在R31。
+<p>协处理器指令：执行协处理器集的操作。协处理器的装入和储存总是I类型；协处理器操作性指令是依赖于协处理器的格式。在R3000A中，系统控制协处理器（cop0）包含了内存管理和异常处理的寄存器。
+<p>特殊指令：执行多种任务，包括在特殊和通用寄存器之间移动数据、系统调用和断点操作，总是R类型的。
+<p>　
+<h3><font color="#FF00FF">指令集</font></h3>
+<p>下面的表是R3000A的汇编指令。
+<h3><font color="#FF00FF"><a name="装入和储存指令">装入和储存指令</a></font></h3>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>指令
+    <td>格式和描述
+  <tr>
+    <td>Load Byte
+    <td>LB   rt, offset (base)<br> 
+      符号扩展16位偏移＋寄存器中的基址寻址<br>
+      寻址字节符号扩展后装到rt
+  <tr>
+    <td>Load Byte Unsigned
+    <td>LBU  rt, offset (base)<br> 
+      符号扩展16位偏移＋寄存器中的基址寻址<br>
+      寻址字节0扩展后装到rt
+  <tr>
+    <td>Load Halfword
+    <td>LH   rt, offset (base)<br> 
+      符号扩展16位偏移＋寄存器中的基址寻址<br>
+      寻址半字符号扩展后装到rt
+  <tr>
+    <td>Load Halfword Unsigned
+    <td>LHU  rt, offset (base)<br> 
+      符号扩展16位偏移＋寄存器中的基址寻址<br>
+      寻址半字0扩展后装到rt
+  <tr>
+    <td>Load Word
+    <td>LW   rt, offset (base)<br> 
+      符号扩展16位偏移＋寄存器中的基址寻址<br>
+      寻址字装到rt
+  <tr>
+    <td>Load Word Left
+    <td>LWL  rt, offset (base)<br> 
+      符号扩展16位偏移＋寄存器中的基址寻址<br>
+      寻址字左移位，使得寻址字节是字的左字节，然后合并到rt寄存器
+  <tr>
+    <td>Load Word Right
+    <td>LWR  rt, offset (base)<br> 
+      符号扩展16位偏移＋寄存器中的基址寻址<br>
+      寻址字右移位，使得寻址字节是字的右字节，然后合并到rt寄存器
+  <tr>
+    <td>Store Byte
+    <td>SB  rt, offset (base)<br> 
+      符号扩展16位偏移＋寄存器中的基址寻址<br>
+      储存rt寄存器的最低有效字节到寻址位置
+  <tr>
+    <td>Store Halfword
+    <td>SH  rt, offset (base)<br> 
+      符号扩展16位偏移＋寄存器中的基址寻址<br>
+      储存rt寄存器的最低有效半字到寻址位置
+  <tr>
+    <td>Store Word
+    <td>SW rt, offset (base)<br> 
+      符号扩展16位偏移＋寄存器中的基址寻址<br>
+      储存rt寄存器的最低有效字到寻址位置
+  <tr>
+    <td>Store Word Left
+    <td>SWL  rt, offset (base)<br> 
+      符号扩展16位偏移＋寄存器中的基址寻址<br>
+      rt寄存器右移位，然后储存到寻址字节
+  <tr>
+    <td>Store Word Right
+    <td>SWR  rt, offset (base)<br> 
+      符号扩展16位偏移＋寄存器中的基址寻址<br>
+      rt寄存器左移位，然后储存到寻址字节
+</table>
+<p> 
+　
+<h3> 
+<font color="#FF00FF"><a name="算术指令">算术指令</a></font></h3>
+<h5>ALU立即指令</h5>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>指令
+    <td>格式和描述
+  <tr>
+    <td>ADD Immediate
+    <td>ADDI  rt, rs, immediate<br> 
+      寄存器rs加16位符号扩展数到寄存器rt。2补数溢出自陷
+  <tr>
+    <td>ADD Immediate Unsigned
+    <td>ADDIU  rt, rs, immediate<br> 
+      寄存器rs加16位符号扩展数到寄存器rt。溢出不自陷
+  <tr>
+    <td>Set on Less Than Immediate
+    <td>SLTI  rt, rs, immediate<br> 
+      比较16位符号扩展立即数和带符号32位整数rs，如果rs小于立即数，rt是1，否则是0
+  <tr>
+    <td>Set on Less Than Unsigned Immediate
+    <td>SLTIU  rt, rs, immediate<br> 
+      比较16位符号扩展立即数和无符号32位整数rs，如果rs小于立即数，rt是1，否则是0。溢出不自陷
+  <tr>
+    <td>AND Immediate
+    <td>ANDI  rt, rs, immediate<br> 
+      0扩展16位立即数‘与’寄存器rs到寄存器rt
+  <tr>
+    <td>OR Immediate
+    <td>ORI  rt, rs, immediate<br> 
+      0扩展16位立即数‘或’寄存器rs到寄存器rt
+  <tr>
+    <td>Exclusive OR Immediate
+    <td>XORI  rt, rs, immediate<br> 
+      0扩展16位立即数‘异或’寄存器rs到寄存器rt
+  <tr>
+    <td>Load Upper Immediate
+    <td>LUI  rt, immediate<br> 
+      16位立即数左移16位。设置字的最低有效16位为0，结果存到rt
+</table>
+<p> 
+　
+<h5>3操作数R类型指令</h5>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>指令
+    <td>格式和描述
+  <tr>
+    <td>Add
+    <td>ADD rd, rs, rt<br> 
+      寄存器rs＋rt，32位结果存到寄存器rd<br>
+      2的补数溢出自陷
+  <tr>
+    <td>ADD Unsigned
+    <td>ADDU  rd, rs, rt<br> 
+      寄存器rs＋rt，32位结果存到寄存器rd<br>
+      不自陷
+  <tr>
+    <td>Subtract
+    <td>SUB  rd, rs, rt<br> 
+      寄存器rs-rt，32位结果存到寄存器rd<br>
+      2的补数溢出自陷
+  <tr>
+    <td>Subtract Unsigned
+    <td>SUBU  rd, rs, rt<br> 
+      寄存器rs-rt，32位结果存到寄存器rd<br>
+      不自陷
+  <tr>
+    <td>Set on Less Than
+    <td>SLT  rd, rs, rt<br> 
+      比较寄存器rs和rt（32位带符号整数），如果rs小于rt，rd＝1，否则rt＝0
+  <tr>
+    <td>Set on Less Than Unsigned
+    <td>SLTU  rd, rs, rt<br> 
+      比较寄存器rs和rt（32位无符号整数），如果rs小于rt，rd＝1，否则rt＝0
+  <tr>
+    <td>AND
+    <td>AND  rd, rs, rt<br> 
+      rs‘与’rt，结果存到rd
+  <tr>
+    <td>OR
+    <td>OR  rd, rs, rt<br> 
+      rs‘或’rt，结果存到rd
+  <tr>
+    <td>Exclusive OR
+    <td>XOR  rd, rs, rt<br> 
+      rs‘异或’rt，结果存到rd
+  <tr>
+    <td>NOR
+    <td>NOR  rd, rs, rt<br> 
+      rs‘或非’rt，结果存到rd
+</table>
+<p> 
+　
+<h5>移位操作指令</h5>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>      指令
+    <td>格式和描述
+  <tr>
+    <td>Shift Left Logical
+    <td>SLL  rd, rt, shamt<br> 
+      寄存器rt左移shamt位，低位补0，32位结果存在rd
+  <tr>
+    <td>Shift Right Logical
+    <td>SRL  rd, rt, shamt<br> 
+      寄存器rt右移shamt位，高位补0，32位结果存在rd
+  <tr>
+    <td>Shift Right Arithmetic
+    <td>SRA  rd, rt, shamt<br> 
+      寄存器rt左移shamt位，符号扩展高位，32位结果存在rd
+  <tr>
+    <td>Shift Left Logical Variable
+    <td>SLLV  rd, rt, rs<br> 
+      寄存器rt左移，移位数是寄存器rs的低5位，低位补0，32位结果存在rd
+  <tr>
+    <td>Shift Right Logical Variable
+    <td>SRLV  rd, rt, rs<br> 
+      寄存器rt右移，移位数是寄存器rs的低5位，高位补0，32位结果存在rd
+  <tr>
+    <td>Shift Right Arithmetic Variable
+    <td>SRAV  rd, rt, rs<br> 
+      寄存器rt左移，移位数是寄存器rs的低5位，符号扩展高位，32位结果存在rd
+</table>
+<p> 
+　
+<h5>乘除运算指令</h5>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>指令
+    <td>格式和描述
+  <tr>
+    <td>Multiply
+    <td>MULT  rs, rt<br> 
+      寄存器rs和rt作为2的补数相乘，64位结果存在寄存器HI/LO
+  <tr>
+    <td>Multiply Unsigned
+    <td>MULTU  rs, rt<br> 
+      寄存器rs和rt作为无符号数相乘，64位结果存在寄存器HI/LO
+  <tr>
+    <td>Divide
+    <td>DIV  rs, rt<br> 
+      寄存器rs和rt作为2的补数相除，32位商存在寄存器LO，32位余数存在寄存器HI
+  <tr>
+    <td>Divide Unsigned
+    <td>DIVU  rs, rt<br> 
+      寄存器rs和rt作为无符号数相除，32位商存在寄存器LO，32位余数存在寄存器HI
+  <tr>
+    <td>Move From HI
+    <td>MFHI  rd<br>
+      移动寄存器HI的值到rd
+  <tr>
+    <td>Move From LO
+    <td>MFLO  rd<br>
+      移动寄存器LO的值到rd
+  <tr>
+    <td>Move To HI
+    <td>MTHI  rd<br>
+      移动寄存器rd的值到HI
+  <tr>
+    <td>Move To LO
+    <td>MTLO  rd<br>
+      移动寄存器rd的值到LO
+</table>
+<p> 
+<h3><font color="#FF00FF"><a name="跳转和转移指令">跳转和转移指令</a></font></h3>
+<h5>跳转指令</h5>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>      指令
+    <td>格式和描述
+  <tr>
+    <td>Jump
+    <td>J  target<br>
+      左移26位target地址，加上PC的高4位，1个指令延时后跳转。
+  <tr>
+    <td>Jump and Link
+    <td>JAL  arget<br>
+      左移26位target地址，加上PC的高4位，1个指令延时后跳转。下一个指令地址放到r31（链接寄存器）
+  <tr>
+    <td>Jump Register
+    <td>JR  rs<br>
+      跳转到寄存器rs中的地址，1个指令延时
+  <tr>
+    <td>Jump and Link Register
+    <td>JALR  rs, rd<br> 
+      跳转到寄存器rs中的地址，1个指令延时。下一个指令地址放到r31（链接寄存器）
+</table>
+<p> 
+　
+<h5>分支指令</h5>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>指令
+    <td>格式和描述
+  <tr>
+    <td>.
+    <td>分支目标：<br>
+      所有分支指令目标地址是这样计算的：指令地址加上16位偏移地址（左移2位后扩展符号到32位），全部的分支都是1个指令延时。
+  <tr>
+    <td>Branch on Equal
+    <td>BEQ  rs, rt, offset<br> 
+      如果rs等于rt，转移到目标地址
+  <tr>
+    <td>Branch  on Not Equal
+    <td>BNE  rs, rt, offset<br> 
+      如果rs不等于rt，转移到目标地址
+  <tr>
+    <td>Branch on Less than or Equal Zero
+    <td>BLEZ  rs, offset<br> 
+      如果rs小于等于0，转移到目标地址
+  <tr>
+    <td>Branch on Greater Than Zero
+    <td>BGTZ  rs, offset<br> 
+      如果rs大于0，转移到目标地址
+  <tr>
+    <td>Branch on Less Than Zero
+    <td>BLTZ  rs, offset<br> 
+      如果rs小于0，转移到目标地址
+  <tr>
+    <td>Branch on Greater than or Equal Zero
+    <td>BGEZ  rs, offset<br> 
+      如果rs大于等于0，转移到目标地址
+  <tr>
+    <td>Branch on Less Than Zero And Link
+    <td>BLTZAL  rs, offset<br> 
+      如果rs小于0，转移到目标地址。下一个指令地址存到r31
+  <tr>
+    <td>Branch on greater than or Equal Zero And Link
+    <td>BGEZAL  rs, offset<br> 
+      如果rs大于等于0，转移到目标地址。下一个指令地址存到r31
+</table>
+<p> 
+<h3><font color="#FF00FF"><a name="特殊指令">特殊指令</a></font></h3>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>指令
+    <td>格式和描述
+  <tr>
+    <td>System Call
+    <td>SYSCALL<br>
+      初始化系统调用自陷，立刻转移控制到异常处理
+  <tr>
+    <td>Breakpoint
+    <td>BREAK<br>
+      初始化断点自陷，立刻转移控制到异常处理
+</table>
+<p>
+<h3><font color="#FF00FF"><a name="协处理器指令">协处理器指令</a></font></h3>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>指令
+    <td>格式和描述
+  <tr>
+    <td>Load Word to Co-processor
+    <td>LWCz  rt, offset (base)<br> 
+      16位符号扩展偏移＋基址寻址<br>
+      寻址字装到z协处理器单元的寄存器rt
+  <tr>
+    <td>Store Word from Co-processor
+    <td>SWCz  rt, offset (base)<br> 
+      16位符号扩展偏移＋基址寻址<br>
+      z协处理器单元的寄存器rt存到内存寻址字
+  <tr>
+    <td>Move To Co-processor
+    <td>MTCz  rt, rd<br> 
+      移动CPU寄存器rt到z协处理器单元的寄存器rd
+  <tr>
+    <td>Move from Co-processor
+    <td>MFCz  rt,rd<br>
+      移动z协处理器单元的寄存器rd到CPU寄存器rt
+  <tr>
+    <td>Move Control To Co-processor
+    <td>CTCz  rt,rd<br>
+      移动CPU寄存器rt到z协处理器单元的控制寄存器rd
+  <tr>
+    <td>Move Control From Co-processor
+    <td>CFCz  rt,rd<br>
+      移动z协处理器单元的控制寄存器rd到CPU寄存器rt
+  <tr>
+    <td>Move Control To Co-processor
+    <td>COPz  cofun<br>
+      协处理器z进行一个操作，R3000A的状态不会被协处理器改变
+</table>
+<p> 
+<h5>系统控制协处理器（COP0）指令</h5>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>指令
+    <td>格式和描述
+  <tr>
+    <td>Move To CP0
+    <td>MTC0  rt, rd<br> 
+      储存CPU寄存器rt到CP0寄存器rd。这个命令跟在普通储存操作之后。
+  <tr>
+    <td>Move From CP0
+    <td>MFC0  rt, rd<br> 
+      装载CP0寄存器rd到CPU寄存器rt
+  <tr>
+    <td>Read Indexed TLB Entry
+    <td>TLBR<br>
+      装载Index寄存器指定的TLB条目到EntryHi和EntryLo寄存器
+  <tr>
+    <td>Write Indexed TLB Entry
+    <td>TLBWI<br>
+      装载EntryHi和EntryLo寄存器到Index寄存器指定的TLB条目
+  <tr>
+    <td>Write Random TLB Entry
+    <td>TLBWR<br>
+      装载EntryHi和EntryLo寄存器到Random寄存器指定的TLB条目
+  <tr>
+    <td>Probe TLB for Matching Entry
+    <td>TLBP<br>
+      装载和EntryHi和EntryLo匹配的TLB条目地址到Index寄存器，如果没有TLB条目匹配，设置Index寄存器的高顺序位
+  <tr>
+    <td>Restore From Exception
+    <td>RFE<br>
+      恢复前一个中断掩码和状态寄存器的模式位到当前状态位，恢复旧的状态位到前一个状态位。
+</table>
+<p> 
+　
+<h3><font color="#FF00FF"><a name="R3000A操作码编码">R3000A操作码编码</a></font></h3>
+<p> 
+下面是MIPS结构的操作码编码
+<h5>操作码</h5>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>位
+    <td>28...26
+    <td> 
+    <td> 
+    <td> 
+    <td> 
+    <td> 
+    <td> 
+    <td> 
+  <tr>
+    <td>38…29
+    <td>0
+    <td>1
+    <td>2
+    <td>3
+    <td>4
+    <td>5
+    <td>6
+    <td>7
+  <tr>
+    <td>0
+    <td>SPECIAL
+    <td>BCOND
+    <td>J
+    <td>JAL
+    <td>BEQ
+    <td>BNE
+    <td>BLEZ
+    <td>BGTZ
+  <tr>
+    <td>1
+    <td>ADDI
+    <td>ADDIU
+    <td>SLTI
+    <td>SLTIU
+    <td>ANDI
+    <td>ORI
+    <td>XORI
+    <td>LUI
+  <tr>
+    <td>2
+    <td>COP0
+    <td>COP1
+    <td>COP2
+    <td>COP3
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+  <tr>
+    <td>3
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+  <tr>
+    <td>4
+    <td>LB
+    <td>LH
+    <td>LWL
+    <td>LW
+    <td>LBU
+    <td>LHU
+    <td>LWR
+    <td>&#8224;
+  <tr>
+    <td>5
+    <td>SB 
+    <td>SH
+    <td>SWL
+    <td>SW
+    <td>&#8224;
+    <td>&#8224;
+    <td>SWR
+    <td>&#8224;
+  <tr>
+    <td>6
+    <td>LWC0
+    <td>LWC1
+    <td>LWC2
+    <td>LWC3
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+  <tr>
+    <td>7
+    <td>SWC0
+    <td>SWC1
+    <td>SWC2
+    <td>SWC3
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+</table>
+<p> 
+<h5>特殊</h5>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>位
+    <td>2…0
+    <td> 
+    <td> 
+    <td> 
+    <td> 
+    <td> 
+    <td> 
+    <td> 
+  <tr>
+    <td>5…3
+    <td>0
+    <td>1
+    <td>2
+    <td>3
+    <td>4
+    <td>5
+    <td>6
+    <td>7
+  <tr>
+    <td>0
+    <td>SLL
+    <td>&#8224;
+    <td>SRL
+    <td>SRA
+    <td>SLLV
+    <td>&#8224;
+    <td>SRLV
+    <td>SRAV
+  <tr>
+    <td>1
+    <td>JR
+    <td>JALR
+    <td>&#8224;
+    <td>&#8224;
+    <td>SYSCALL
+    <td>BREAK
+    <td>&#8224;
+    <td>&#8224;
+  <tr>
+    <td>2
+    <td>MFHI
+    <td>MTHI
+    <td>MFLO
+    <td>MTLO
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+  <tr>
+    <td>3
+    <td>MULT
+    <td>MULTU
+    <td>DIV
+    <td>DIVU
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+  <tr>
+    <td>4
+    <td>ADD
+    <td>ADDU
+    <td>SUB
+    <td>SUBU
+    <td>AND
+    <td>OR
+    <td>XOR
+    <td>NOR
+  <tr>
+    <td>5
+    <td>&#8224;
+    <td>&#8224;
+    <td>SLT
+    <td>SLTU
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+  <tr>
+    <td>6
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+  <tr>
+    <td>7
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+    <td>&#8224;
+</table>
+<p> 
+<h5>条件跳转</h5>
+<table border="1" cellspacing="0">
+  <tr>
+       <td>位
+       <td>8…16
+       <td> 
+       <td> 
+       <td> 
+       <td> 
+       <td> 
+       <td> 
+       <td> 
+  <tr>
+       <td>20…19
+       <td>0
+       <td>1
+       <td>2
+       <td>3
+       <td>4
+       <td>5
+       <td>6
+       <td>7
+  <tr>
+       <td>0
+       <td>BLTZ
+       <td>BGEZ
+       <td> 
+       <td> 
+       <td> 
+       <td> 
+       <td> 
+       <td> 
+  <tr>
+       <td>1
+       <td> 
+       <td> 
+       <td> 
+       <td> 
+       <td> 
+       <td> 
+       <td> 
+       <td> 
+    <tr>
+       <td>2
+       <td>BLTZAL
+       <td>BGEZAL
+       <td> 
+       <td> 
+       <td> 
+       <td> 
+       <td> 
+       <td> 
+</table>
+<p>　
+<h5>协处理器z</h5>
+<table border="1" cellspacing="0">
+    <tr>
+       <td>位
+       <td>23…21
+       <td> 
+       <td> 
+       <td> 
+       <td> 
+       <td> 
+       <td> 
+       <td> 
+    <tr>
+       <td>25…24
+       <td>0
+       <td>1
+       <td>2
+       <td>3
+       <td>4
+       <td>5
+       <td>6
+       <td>7
+    <tr>
+       <td>0
+       <td>MF
+       <td> 
+       <td>CF
+       <td> 
+       <td>MT
+       <td> 
+       <td>CT
+       <td> 
+    <tr>
+       <td>1
+       <td>BC
+       <td>&#8224;
+       <td>&#8224;
+       <td>&#8224;
+       <td>&#8224;
+       <td>&#8224;
+       <td>&#8224;
+       <td>&#8224;
+</table>
+<p>协处理器特殊操作 
+<p> 
+<h5>协处理器0（COP0）</h5>
+<table border="1" cellspacing="0">
+  <tr>
+       <td>位
+       <td>2…0
+       <td>       
+       <td> 
+       <td> 
+       <td> 
+       <td> 
+       <td> 
+       <td> 
+  <tr>
+      <td>4…3
+      <td>0
+      <td>1
+      <td>2
+      <td>3
+      <td>4
+      <td>5
+      <td>6
+      <td>7
+  <tr>
+      <td>0
+      <td>
+      <td>TLBR
+      <td>TLBWI
+      <td>      
+      <td>      
+      <td>      
+      <td>TLBWR
+      <td>  
+  <tr>
+      <td>1
+      <td>TLBP
+      <td>      
+      <td>      
+      <td>      
+      <td>      
+      <td>      
+      <td>      
+      <td>  
+  <tr>
+      <td>2
+      <td>RFE
+      <td>      
+      <td>      
+      <td>      
+      <td>      
+      <td>      
+      <td>      
+      <td>  
+  <tr>
+      <td>3
+      <td>      
+      <td>      
+      <td>      
+      <td>      
+      <td>      
+      <td>      
+      <td>      
+      <td>
+</table>
