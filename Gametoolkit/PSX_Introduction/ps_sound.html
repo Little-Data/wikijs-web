@@ -1,0 +1,917 @@
+<!--
+title: 声音
+description: 
+published: 1
+date: 2024-08-24T10:36:20.923Z
+tags: psx, 文档
+editor: code
+dateCreated: 2024-08-24T10:36:20.923Z
+-->
+
+<h3><font color="#FF00FF"><a name="SPU－声音处理单元">SPU－声音处理单元</a></font></h3>
+<p>SPU对应PSX的所有声音能力。它能处理24个音色，有512KB声音缓存。每个声音有ADSR包络滤波器和其他很多特性。
+<h5>　</h5>
+<h5>声音缓存</h5>
+<p>SPU控制512KB声音缓存，数据压缩储存为16字节的小块。每个块包含14个打包的采样字节和2个头字节1个用于打包，1个用于采样结束和循环信息。一个这样的块解压为28个采样字节（＝14个16位采样）
+<p>在CD卷处理和声音数据的音色1和音色3包络后，在SPU缓存的头4KB储存了CD音频的解压数据，解压数据以16位带符号值储存。采样率是44.1KHz。
+<p>4KB之后是为系统保留的8个字节。在此之后到回响工作区（如果打开了效果处理）之前都可以自由存放采样数据。回响工作区的大小根据效果类型的不同而不同。
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="2">内存布局
+  <tr>
+    <td>0x00000-0x003FF
+    <td>CD音频左
+  <tr>
+    <td>0x00400-0x007FF
+    <td>CD音频右
+  <tr>
+    <td>0x00800-0x00BFF
+    <td>音色1
+  <tr>
+    <td>0x00C00-0x00FFF
+    <td>音色3
+  <tr>
+    <td>0x01000-0x0100F
+    <td>系统区
+  <tr>
+    <td>0x01008-0x0xxxx
+    <td>声音数据区域
+  <tr>
+    <td>0x0xxxx-0x7FFFF
+    <td>回响工作区
+</table>
+<h5>　</h5>
+<h5>音色</h5>
+<p>SPU有24个硬件音色，这些音色可以用来复制采样数据、噪音或者用作下一个音色的调制频率。每个音色都有自己的可变成ADSR包络滤波器。主音量可以分别编程左右输出。ADSR包络滤波器如下工作：    
+<img src="ps_sound.gif" width="226" height="129">
+<table border="1" cellspacing="0">
+  <tr>
+    <td>Ar
+    <td>增幅率，指定了音量从0到最大的增加速率，斜率可以设置为线性或指数的
+  <tr>
+    <td>Dr
+    <td>衰减率，指定了音量衰减至维持电平的速率，总是指数衰减的
+  <tr>
+    <td>Sl
+    <td>维持水平，开始维持的基本水平
+  <tr>
+    <td>Sr
+    <td>维持率，维持音符音量增减的速率，可以是线性或指数的
+  <tr>
+    <td>Rr
+    <td>释放率，音符衰减音量的速率
+  <tr>
+    <td>lvl
+    <td>音量水平
+  <tr>
+    <td>t
+    <td>时间
+</table>
+<p>全局音量可以设置为从当前值线性或指数扫略提升或减小，左右声道可以分别设置。
+<p>　<h3><font color="#FF00FF"><a name="SPU寄存器">SPU寄存器</a></font></h3>
+<p>SPU占据0x1F80_1C00-0x1F80_1DFF区域，全部寄存器是16字长的。
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0x1F90_1C00-0x1F80_1D7F
+    <td>音色数据区域，每个音色都有8个16位寄存器，结构如下
+</table>
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="2">0x1F80_1xx0-0x1F80_1xx2&nbsp;&nbsp;&nbsp; 音量（xx＝0xC0＋音色号）   
+  <tr>
+    <td>0x1F80_1xx0
+    <td>左音量
+  <tr>
+    <td>0x1F80_1xx2
+    <td>右音量
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="3">音量模式
+  <tr>
+    <td>15
+    <td>14
+    <td>13&nbsp;&nbsp;&nbsp; 0   
+  <tr>
+    <td>0
+    <td>S
+    <td>VV
+</table>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>VV
+    <td>0x0000-0x3FFF 音量   
+  <tr>
+    <td>S
+    <td>0 正常相位<br>   
+      1 反相   
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="6">扫略模式
+  <tr>
+    <td>15
+    <td>14
+    <td>13
+    <td>12
+    <td>11&nbsp; 7   
+    <td>6&nbsp;&nbsp; 0   
+  <tr>
+    <td>1
+    <td>Sl
+    <td>Dr
+    <td>Ph
+    <td>　
+    <td>VV
+</table>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>VV
+    <td>0x000_0x007F 音量   
+  <tr>
+    <td>Sl
+    <td>0 线性斜率<br>   
+      1 指数斜率   
+  <tr>
+    <td>Dr
+    <td>0 增加<br>   
+      1 减少   
+  <tr>
+    <td>Ph
+    <td>0 正常相位<br>   
+      1 反相   
+</table>
+<p>在扫略模式，当前音量增加到最大指值，或者减少到最小值，根据不同模式，选择和当前音量相同的相位。
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="2">0x1F80_1xx4 基音   
+  <tr>
+    <td>15&nbsp;&nbsp;&nbsp; 14   
+    <td>13&nbsp;&nbsp;&nbsp;&nbsp; 0   
+  <tr>
+    <td>　
+    <td>Pt
+</table>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>Pt
+    <td>0x000_0x3FFF 指定基音   
+</table>
+<p>任何值可以如下表设置八度音
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0x0200
+    <td>-3 八度音   
+  <tr>
+    <td>0x0400
+    <td>-2
+  <tr>
+    <td>0x0800
+    <td>-1
+  <tr>
+    <td>0x1000
+    <td>采样音阶
+  <tr>
+    <td>0x2000
+    <td>+1
+  <tr>
+    <td>0x3FFF
+    <td>+2
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0x1F80_1xx6&nbsp; 声音开始地址   
+  <tr>
+    <td>15&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    
+      0
+  <tr>
+    <td>地址&nbsp;&nbsp;&nbsp;&nbsp; 声音缓存中数据开始地址/8   
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="4">0x1F80_1xx8&nbsp; 增益/衰减/维持水平   
+  <tr>
+    <td>15
+    <td>14&nbsp;&nbsp; 8   
+    <td>7&nbsp;&nbsp;&nbsp; 4   
+    <td>3&nbsp;&nbsp;&nbsp; 0   
+  <tr>
+    <td>Am
+    <td>Ar
+    <td>Dr
+    <td>Sl
+</table>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>Am
+    <td>0 增益模式 线性<br>   
+      1 非线性   
+  <tr>
+    <td>Ar
+    <td>0－7F 增益率   
+  <tr>
+    <td>Dr
+    <td>0－F&nbsp; 衰减率   
+  <tr>
+    <td>Sl
+    <td>0－f&nbsp; 维持水平   
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="6">0x1F80_1xxA&nbsp; 维持率，释放率   
+  <tr>
+    <td>15
+    <td>14
+    <td>13
+    <td>12&nbsp;&nbsp; 6   
+    <td>5
+    <td>4&nbsp;&nbsp;&nbsp; 0   
+  <tr>
+    <td>Sm
+    <td>Sd
+    <td>0
+    <td>Sr
+    <td>Rm
+    <td>Rr
+</table>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>Sm
+    <td>0 维持率模式 线性<br>   
+      1 指数   
+  <tr>
+    <td>Sd
+    <td>0 维持率模式 增加<br>   
+      1 衰减   
+  <tr>
+    <td>Sr
+    <td>0－7F&nbsp; 维持率   
+  <tr>
+    <td>Rm
+    <td>0 线性衰减<br>   
+      1 指数衰减   
+  <tr>
+    <td>Rr
+    <td>0－1F 释放率   
+</table>
+<p>注：衰减率总是指数衰减的，因此设置Rm无效。
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0x1F80_1xxC&nbsp; 当前ADSR音量   
+  <tr>
+    <td>15&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    
+      0
+  <tr>
+    <td>ASDRvol，读取时返回当前包络音量
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0x1F80_1xxE&nbsp; 重复地址   
+  <tr>
+    <td>15&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    
+      0
+  <tr>
+    <td>Ra 0x0000-0xFFFF 地址采样循环   
+</table>
+<p>注：只有在音色开始（例如KeyON）后设置这个寄存器才有效果，否则循环地址被采样复位。
+<h5></h5>
+<h3><font color="#FF00FF"><a name="SPU全局寄存器">SPU全局寄存器</a></font></h3>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0x1F801D80/82&nbsp; 主音量左/右   
+  <tr>
+    <td>15&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    
+      0
+  <tr>
+    <td>MVol 0x0000-0xFFFF 主音量   
+</table>
+<p>设置主音量，这些和通道音量寄存器一样工作。
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="2">0x1F801D84/86&nbsp; 回响音量左/友   
+  <tr>
+    <td>15
+    <td>14&nbsp;&nbsp; 0   
+  <tr>
+    <td>P
+    <td>Rvd
+</table>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>Rvd
+    <td>0x0000-0x7FFF&nbsp; 设置音效的总音量   
+  <tr>
+    <td>P
+    <td>0 正常相位<br>   
+      1 反相   
+</table>
+<p>以下的寄存器有一个通用的布局：
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="16">第一寄存器
+  <tr>
+    <td>15
+    <td>14
+    <td>13
+    <td>12
+    <td>11
+    <td>10
+    <td>9
+    <td>8
+    <td>7
+    <td>6
+    <td>5
+    <td>4
+    <td>3
+    <td>2
+    <td>1
+    <td>0
+  <tr>
+    <td>cF
+    <td>cE
+    <td>cD
+    <td>cC
+    <td>cB
+    <td>cA
+    <td>c9
+    <td>c8
+    <td>c7
+    <td>c6
+    <td>c5
+    <td>c4
+    <td>c3
+    <td>c2
+    <td>c1
+    <td>c0
+</table>
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="9">第二寄存器
+  <tr>
+    <td>15&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8   
+    <td>7
+    <td>6
+    <td>5
+    <td>4
+    <td>3
+    <td>2
+    <td>1
+    <td>0
+  <tr>
+    <td>0
+    <td>c17
+    <td>c16
+    <td>c15
+    <td>c14
+    <td>c13
+    <td>c12
+    <td>c11
+    <td>c10
+</table>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>C0-C17
+    <td>0 通道cxx关闭<br>   
+      1 通道cxx开始   
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0x1F80_1D88
+    <td>音色开（0－15）
+  <tr>
+    <td>0x1F80_1D8A
+    <td>音色开（16－23）
+  <tr>
+    <td colspan="2">设置当前音色到KeyOn（例如，开始ads）
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0x1F80_1D8C
+    <td>音色关（0－15）
+  <tr>
+    <td>0x1F80_1D8E
+    <td>音色关（16-23）
+  <tr>
+    <td colspan="2">设置当前音色到KeyOff（例如，释放）
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0x1F80_1D90
+    <td>通道FM（基音）模式（0－15）
+  <tr>
+    <td>0x1F80_1D92
+    <td>通道FM（基音）模式（16-23）
+  <tr>
+    <td colspan="2">设置通道频率调制，使用先前的通道调制器
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0x1F80_1D94
+    <td>通道噪音模式（0－15）
+  <tr>
+    <td>0x1F80_1D96
+    <td>通道噪音模式（16－23）
+  <tr>
+    <td colspan="2">设置通道到噪音模式
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0x1F80_1D98
+    <td>通道回响模式（0－15）
+  <tr>
+    <td>0x1F80_1D9A
+    <td>通道回响模式（16－23）
+  <tr>
+    <td colspan="2">设置通道回响模式，当采样结束，通道回响关闭
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0x1F80_1D9C
+    <td>通道开/关（0－15）
+  <tr>
+    <td>0x1F80_1D9E
+    <td>通道开/关（16－23）
+  <tr>
+    <td colspan="2">返回通道是否静音
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0x1F80_1DA2&nbsp; 回响工作区开始   
+  <tr>
+    <td>15&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    
+      0
+  <tr>
+    <td>Revwa 0x0000_0xFFFF 在声音缓存中的回响工作区开始点/8   
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0x1F80_1DA4&nbsp; 声音缓存IRQ地址   
+  <tr>
+    <td>15&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    
+      0
+  <tr>
+    <td>IRQa 0x0000-0xFFFF 声音缓存中IRQ地址/8   
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0x1F80_1DA6&nbsp; 声音缓存IRQ地址   
+  <tr>
+    <td>15&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    
+      0
+  <tr>
+    <td>Sba 0x0000-0xFFFF 在声音缓存中的地址/8。下一个传输到这个地址   
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0x1F80_1DA8&nbsp;&nbsp; SPU数据  
+  <tr>
+    <td>15&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   
+      0
+  <tr>
+    <td>非DMA传送时的数据
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="10">0z1F80_1DAA&nbsp;&nbsp; SPU控制 sp0  
+  <tr>
+    <td>15
+    <td>14
+    <td>13&nbsp;&nbsp; 8  
+    <td>7
+    <td>6
+    <td>5&nbsp;&nbsp;&nbsp; 4  
+    <td>3
+    <td>2
+    <td>1
+    <td>0
+  <tr>
+    <td>En
+    <td>Mu
+    <td>Noise
+    <td>Rv
+    <td>Irq
+    <td>DMA
+    <td>Er
+    <td>Cr
+    <td>Ee
+    <td>Ce
+</table>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>En
+    <td>0 SPU 关<br>  
+      1 SPU 开  
+  <tr>
+    <td>Mu
+    <td>0 SPU静音<br>  
+      1 SPU不静音  
+  <tr>
+    <td>Noise
+    <td>噪音时钟频率
+  <tr>
+    <td>Rv
+    <td>0 回响禁止<br>  
+      1 回响使能  
+  <tr>
+    <td>Irq
+    <td>0 Irq禁止<br>  
+      1 Irq使能  
+  <tr>
+    <td>DMA
+    <td>00<br>
+      01 非DMA写（通过数据寄存器传输）<br>  
+      10 DMA写<br>  
+      11 DMA读  
+  <tr>
+    <td>Er
+    <td>0 外部回响关<br>  
+      1 外部回响开  
+  <tr>
+    <td>Cr
+    <td>0 CD回响关<br>  
+      1 CD回响开  
+  <tr>
+    <td>Ee
+    <td>0 外部音频关<br>  
+      1 外部音频开  
+  <tr>
+    <td>Ce
+    <td>0 CD音频关<br>  
+      1 CD音频开  
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0x1F80_1DAC&nbsp;&nbsp; SPU状态  
+  <tr>
+    <td>15&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   
+      0
+  <tr>
+    <td>在SPU初始化例程中，这个寄存器被装入0x4
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="4">0x1F80_1DAE&nbsp; SPU状态  
+  <tr>
+    <td>15&nbsp;&nbsp;&nbsp; 12  
+    <td>11
+    <td>10
+    <td>9&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0  
+  <tr>
+    <td>　
+    <td>Dh
+    <td>Rd
+    <td>　
+</table>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>Dh
+    <td>0 解码到前半个缓存<br>  
+      1 解码到后半个缓存  
+  <tr>
+    <td>Rd
+    <td>0 SPU准备传输<br>  
+      1 SPU未准备好  
+</table>
+<p>一些9－0位也是准备好/未准备好状态。等待SPU准备好的函数要等待a－0变成0。
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="2">0x1F80_1DB0/B2&nbsp; CD音量左/右  
+  <tr>
+    <td>15
+    <td>14&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   
+      0
+  <tr>
+    <td>P
+    <td>CDvol
+</table>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>CDvol
+    <td>0x0000－0x7FFF&nbsp; 设置CD输入音量  
+  <tr>
+    <td>P
+    <td>0 正常相位<br>  
+      1 反相  
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="2">0x1F80_1DB4/B6&nbsp; 外部音量左/右  
+  <tr>
+    <td>15
+    <td>14&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   
+      0
+  <tr>
+    <td>P
+    <td>Exvol
+</table>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>Exvol
+    <td>0x0000－0x7FFF&nbsp; 设置外部输入音量  
+  <tr>
+    <td>P
+    <td>0 正常相位<br>  
+      1 反相  
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="2">0x1DC0_0x1DFF&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   
+      回响配置区域
+  <tr>
+    <td>0x1F80_1DC0
+    <td>　
+  <tr>
+    <td>0x1F80_1DC2
+    <td>　
+  <tr>
+    <td>0x1F80_1DC4
+    <td>低通滤波频率。7FFF＝最大音量＝没有滤波
+  <tr>
+    <td>0x1F80_1DC6
+    <td>效果音量0－0x7FFF，第15位＝相位
+  <tr>
+    <td>0x1F80_1DC8
+    <td>　
+  <tr>
+    <td>0x1F80_1DCA
+    <td>　
+  <tr>
+    <td>0x1F80_1DCC
+    <td>　
+  <tr>
+    <td>0x1F80_1DCE
+    <td>反馈
+  <tr>
+    <td>0x1F80_1DD0
+    <td>　
+  <tr>
+    <td>0x1F80_1DD2
+    <td>　
+  <tr>
+    <td>0x1F80_1DD4
+    <td>延时（见下面）
+  <tr>
+    <td>0x1F80_1DD6
+    <td>延时（见下面）
+  <tr>
+    <td>0x1F80_1DD8
+    <td>延时（见下面）
+  <tr>
+    <td>0x1F80_1DDA
+    <td>　
+  <tr>
+    <td>0x1F80_1DDC
+    <td>　
+  <tr>
+    <td>0x1F80_1DDE
+    <td>　
+  <tr>
+    <td>0x1F80_1DE0
+    <td>延时（见下面）
+  <tr>
+    <td>0x1F80_1DE2
+    <td>　
+  <tr>
+    <td>0x1F80_1DE4
+    <td>　
+  <tr>
+    <td>0x1F80_1DE6
+    <td>　
+  <tr>
+    <td>0x1F80_1DE8
+    <td>　
+  <tr>
+    <td>0x1F80_1DEA
+    <td>　
+  <tr>
+    <td>0x1F80_1DEC
+    <td>　
+  <tr>
+    <td>0x1F80_1DEE
+    <td>　
+  <tr>
+    <td>0x1F80_1DF0
+    <td>　
+  <tr>
+    <td>0x1F80_1DF2
+    <td>　
+  <tr>
+    <td>0x1F80_1DF4
+    <td>延时
+  <tr>
+    <td>0x1F80_1DF6
+    <td>延时
+  <tr>
+    <td>0x1F80_1DF8
+    <td>　
+  <tr>
+    <td>0x1F80_1DFA
+    <td>　
+  <tr>
+    <td>0x1F80_1DFC
+    <td>　
+  <tr>
+    <td>0x1F80_1DFE
+    <td>　
+</table>
+<p>　
+<h3><font color="#FF00FF"><a name="回响">回响</a></font></h3>
+<p>SPU配备了回响和延时音效处理器，效果处理器一个时刻只能产生一种音效，你可以指定每个音色是否使用音效。<p>音效通过初始化寄存器0x1DC0到0x1FFE来建立，不太清楚这些怎样工作，但可以使用下面的预设置。音效处理需要使用一点声音缓存，大小依据音效类型不同，如下：
+<table border="1" cellspacing="0">
+  <tr>
+    <td>回响关
+    <td>0x0000
+    <td>会堂
+    <td>0x0ADE0
+  <tr>
+    <td>房间
+    <td>0x016C0
+    <td>空间回声
+    <td>0x0F6C0
+  <tr>
+    <td>小音乐厅
+    <td>0x01F40
+    <td>回声
+    <td>0x18040
+  <tr>
+    <td>中音乐厅
+    <td>0x04840
+    <td>延时
+    <td>0x18040
+  <tr>
+    <td>大音乐厅
+    <td>0x06FE0
+    <td>会堂回声
+    <td>0x03C00
+</table>
+<p>工作区的位置在寄存器0x1DA2中设置，它的值是在声音缓存中的位置/8，通常值如下：
+<table border="1" cellspacing="0">
+  <tr>
+    <td>回响关
+    <td>0xFFFE
+    <td>会堂
+    <td>0xEA44
+  <tr>
+    <td>房间
+    <td>0xFB28
+    <td>空间回声
+    <td>0xE128
+  <tr>
+    <td>小音乐厅
+    <td>0xFC18
+    <td>回声
+    <td>0xCFF8
+  <tr>
+    <td>中音乐厅
+    <td>0xF6F8
+    <td>延时
+    <td>0xCFF8
+  <tr>
+    <td>大音乐厅
+    <td>0xF204
+    <td>会堂回声
+    <td>0xF880
+</table>
+<p>对于延时和回声效果（不是空间回声和会堂回声），你可以指定延迟时间和反馈（从0－127），计算见后面。
+<p>设置新的回响效果，使用下面的步骤：
+<table border="1" cellspacing="0">
+  <tr>
+    <td>关闭回响（sp0第7位）
+  <tr>
+    <td>设置深度为0
+  <tr>
+    <td>先计算延时和反馈
+  <tr>
+    <td>拷贝预设置到音效寄存器
+  <tr>
+    <td>打开回响
+  <tr>
+    <td>设置深度到想要的值
+</table>
+<p>要保证回响工作区被清空，否则会产生一些噪音。
+<p>要在一个音色上使用音效，只要简单地打开通道回响寄存器上对应的位即可。注意，这些位在通道采样结束时自动关闭。
+<p>　
+<h3><font color="#FF00FF"><a name="音效预设">音效预设</a></font></h3>
+<p>把他们按顺序拷贝到0x1DC0-0x1DFE
+<p>　
+<p>回响关:
+<p>0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
+<p>0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
+<p>0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
+<p>0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
+<p>
+<p>房间:
+<p>0x007D, 0x005B, 0x6D80, 0x54B8, 0xBED0, 0x0000, 0x0000, 0xBA80
+<p>0x5800, 0x5300, 0x04D6, 0x0333, 0x03F0, 0x0227, 0x0374, 0x01EF
+<p>0x0334, 0x01B5, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
+<p>0x0000, 0x0000, 0x01B4, 0x0136, 0x00B8, 0x005C, 0x8000, 0x8000
+<p>
+<p>小音乐厅:
+<p>0x0033，0x0025，0x70F0，0x4FA8，0xBCE0，0x4410，0xC0F0，0x9C00
+<p>0x5280，0x4EC0，0x03E4，0x031B，0x03A4，0x02AF，0x0372，0x0266
+<p>0x031C，0x025D，0x025C，0x018E，0x022F，0x0135，0x01D2，0x00B7
+<p>0x018F，0x00B5，0x00B4，0x0080，0x004C，0x0026，0x8000，0x8000
+<p>
+<p>中音乐厅:
+<p>0x00B1 0x007F 0x70F0 0x4FA8 0xBCE0 0x4510 0xBEF0  
+0xB4C0
+<p>0x5280 0x4EC0 0x0904 0x076B 0x0824 0x065F 0x07A2  
+0x0616
+<p>0x076C 0x05ED 0x05EC 0x042E 0x050F 0x0305 0x0462  
+0x02B7
+<p>0x042F 0x0265 0x0264 0x01B2 0x0100 0x0080 0x8000  
+0x8000
+<p>
+<p>大音乐厅:
+<p>0x00E3 0x00A9 0x6F60 0x4FA8 0xBCE0 0x4510 0xBEF0  
+0xA680
+<p>0x5680 0x52C0 0x0DFB 0x0B58 0x0D09 0x0A3C 0x0BD9  
+0x0973
+<p>0x0B59 0x08DA 0x08D9 0x05E9 0x07EC 0x04B0 0x06EF  
+0x03D2
+<p>0x05EA 0x031D 0x031C 0x0238 0x0154 0x00AA 0x8000  
+0x8000
+<p>
+<p>会堂:
+<p>0x01A5 0x0139 0x6000 0x5000 0x4C00 0xB800 0xBC00  
+0xC000
+<p>0x6000 0x5C00 0x15BA 0x11BB 0x14C2 0x10BD 0x11BC  
+0x0DC1
+<p>0x11C0 0x0DC3 0x0DC0 0x09C1 0x0BC4 0x07C1 0x0A00  
+0x06CD
+<p>0x09C2 0x05C1 0x05C0 0x041A 0x0274 0x013A 0x8000  
+0x8000
+<p>
+<p>空间回声:
+<p>0x033D 0x0231 0x7E00 0x5000 0xB400 0xB000 0x4C00  
+0xB000
+<p>0x6000 0x5400 0x1ED6 0x1A31 0x1D14 0x183B 0x1BC2  
+0x16B2
+<p>0x1A32 0x15EF 0x15EE 0x1055 0x1334 0x0F2D 0x11F6  
+0x0C5D
+<p>0x1056 0x0AE1 0x0AE0 0x07A2 0x0464 0x0232 0x8000  
+0x8000
+<p>
+<p>回声:
+<p>0x0001 0x0001 0x7FFF 0x7FFF 0x0000 0x0000 0x0000  
+0x8100
+<p>0x0000 0x0000 0x1FFF 0x0FFF 0x1005 0x0005 0x0000  
+0x0000
+<p>0x1005 0x0005 0x0000 0x0000 0x0000 0x0000 0x0000  
+0x0000
+<p>0x0000 0x0000 0x1004 0x1002 0x0004 0x0002 0x8000  
+0x8000
+<p>
+<p>延时:
+<p>0x0001 0x0001 0x7FFF 0x7FFF 0x0000 0x0000 0x0000  
+0x0000
+<p>0x0000 0x0000 0x1FFF 0x0FFF 0x1005 0x0005 0x0000  
+0x0000
+<p>0x1005 0x0005 0x0000 0x0000 0x0000 0x0000 0x0000  
+0x0000
+<p>0x0000 0x0000 0x1004 0x1002 0x0004 0x0002 0x8000  
+0x8000
+<p>
+<p>会堂回声:
+<p>0x0017 0x0013 0x70F0 0x4FA8 0xBCE0 0x4510 0xBEF0  
+0x8500
+<p>0x5F80 0x54C0 0x0371 0x02AF 0x02E5 0x01DF 0x02B0  
+0x01D7
+<p>0x0358 0x026A 0x01D6 0x011E 0x012D 0x00B1 0x011F  
+0x0059
+<p>0x01A0 0x00E3 0x0058 0x0040 0x0028 0x0014 0x8000  
+0x8000
+<p>
+<h5>延时计算</h5>
+<p>选择延时时间范围0－0x7F。rXXXX表示寄存器0x1F80_XXXX
+<p>r1dd4 = dt*64.5 - r1dc0 
+<p>r1dd6 = dt*32.5 - r1dc2
+<p>r1dd8 = r1dda + dt*32.5
+<p>r1de0 = r1de2 + dt*32.5
+<p>r1df4 = r1df8 + dt*32.5
+<p>r1df6 = r1dfa + dt*32.5</p>
