@@ -1,0 +1,2349 @@
+<!--
+title: 图形处理芯片（GPU）
+description: 
+published: 1
+date: 2024-08-24T10:29:02.273Z
+tags: psx, 文档
+editor: code
+dateCreated: 2024-08-24T10:29:02.273Z
+-->
+
+<p>GPU控制了一个1MB的帧缓存，提供了一个最大1024×512分辨率16位象素的屏幕。它同时也包括了一个2KB的材质高速缓存。可以以15位或24位色显示。<p>因为PSX缺乏一个FPU，所以增加了第二个协处理器，成为几何变换引擎         
+GTE（Geometry Transformation Engine）。GTE是PSX上所有3D运算的核心，它能够进行向量和矩阵运算，视角转换，颜色平衡等等。它对这些操作比CPU快得多，作为第二个协处理器（Cop2），它没有分配物理地址。        
+<p>1MB的帧缓存不能被CPU访问，只能通过向GPU发送命令或者DMA传送数据。它有一个64字节的命令FIFO缓存，可以保存3条命令，它连接到一个DMA通道用来传送图像数据和链接命令列表（通道2）和一个DMA通道用来反向清楚一个顺序表（通道6）。       
+<p>　<h3><a name="通讯和顺序表（OT）"><font color="#FF00FF">通讯和顺序表（OT）</font></a></h3>
+<p>所有的绘图和绘图环境数据都作为信息包送到GPU。每一个信息包都告诉GPU怎样和在哪里绘一个图元，或者设置一个绘图环境参数。显示环境通过GPU的控制端口用一个单字命令设置。<p>信息包可以通过数据端口逐字送到GPU也可以用DMA大量传送。所以创建了一个特殊的DMA模式来方便地传送和管理大量的信息包。在这种模式，发送的是一个包列表。其中每一个条目都包含了一个头部（一个包含了下一个条目地址和信息包大小的字）和包本身。这样做的好处是信息包没有必要进行顺序储存，使得容易控制信息包被处理的顺序。GPU按照获得信息包的顺序处理它们，所以列表的第一个条目最先被画出。要插入一个包，只需要进行链表的插入操作，修改地址。<p>顺序表OT（Ordering         
+Table）用来辅助在列表中寻找位置。在一开始，它是一个0字节包的链接条目，仅仅是包头部列表，没一个条目指向下一个条目。由程序生成的图元可以加入到这个表的某一个索引中。先读取表条目中的地址，将它替换成新包的地址，然后将表中的地址存到包里。当所有的包都生成后，只需要将第一个列表条目的地址传到DMA，就能够按照你输入表的顺序画出各个信息包。表中包条目索引值低的比索引值高的先画出。输入同一个索引的包，最后输入的最先画出。<p>在3D作图中，通常希望高Z值的图元先画出，所以Z值可以用作索引值。很简单，只要做一个表，其中每一个条目指向前一个条目，然后在最后一个表条目开始DMA。可以用一个特殊的DMA通道辅助你创建这样的表。<p>　<h3><font color="#FF00FF"><a name="帧缓存">帧缓存</a></font></h3>
+<p>帧缓存是储存了所有GPU在绘图和显示图像过程中能够访问和处理的图像数据的内存，它个内存不能被CPU直接访问。大小是1MB，可以看作1024×512象素，每个象素大小是一个字（16bit）。它不像通常内存那样线性访问，而是通过坐标访问，左上角（0，0），右下角（1023，511）。<p>当数据从帧缓存中显示的时候，在这个记忆体中按照指定的坐标读取一个矩形区域。区域的大小可以从几种硬件定义的类型中选择。注意这些硬件大小只有在‘X和Y停止/开始’寄存器处于缺省值的时候才有效。显示的区域可以用两种颜色格式显示：15位直接或24位直接，数据格式如下：<p>15位直接显示
+<table border="1" cellspacing="0">
+  <tr>
+    <td width="100%" colspan="4">象素
+  <tr>
+    <td width="25%">M
+    <td width="25%">蓝色
+    <td width="25%">绿色
+    <td width="25%">红色
+  <tr>
+    <td width="25%">15
+    <td width="25%">14&nbsp;&nbsp; 10       
+    <td width="25%">9&nbsp;&nbsp;&nbsp; 5       
+    <td width="25%">4&nbsp;&nbsp;&nbsp; 0       
+</table>
+<p>也就是每种颜色值是0～31，最高位（M）是掩码。
+<p>24位直接显示
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="2">象素字节0
+    <td colspan="2">象素字节1
+    <td colspan="2">象素字节2
+  <tr>
+    <td>绿色0
+    <td>红色0
+    <td>红色1
+    <td>蓝色0
+    <td>蓝色1
+    <td>绿色1
+  <tr>
+    <td>15&nbsp;&nbsp; 8       
+    <td>7&nbsp;&nbsp;&nbsp; 0       
+    <td>15&nbsp;&nbsp; 8       
+    <td>7&nbsp;&nbsp;&nbsp; 0       
+    <td>15&nbsp;&nbsp; 8       
+    <td>7&nbsp;&nbsp;&nbsp; 0       
+</table>
+<p>GPU也可以设置为24位模式，这种情况下，一个象素3个字节，每种颜色1字节。这样2个显示象素用3个帧缓存象素编码，显示为[R0,G0,B0]        
+[R1,G1,B1]。
+<p>　
+<h3><font color="#FF00FF"><a name="图元">图元</a></font></h3>
+<p>GPU能够绘制的基本图形叫做图元，它可以绘制下面这些东西：
+<h5>多边形
+</h5>
+<p>GPU可以画3点和4点多边形，每一点指定了帧缓存中的一点。可以带辐射阴影。4点多边形定点的顺序如下
+<table border="1" cellspacing="0">
+  <tr>
+    <td>1
+    <td>　
+    <td>2
+  <tr>
+    <td>　
+    <td>&nbsp;&nbsp;&nbsp; 
+    <td>　
+  <tr>
+    <td>3
+    <td>　
+    <td>4
+</table>
+<p>一个4点多边形在内部当作2个3点多边形处理。GPU画多边形的时候最右边和最下边的边不会画出，所以（0，0）－（32，32）实际画出（0，0）－（31，31）。要使两个多边形相接，只要使它们坐标相同就可以了。
+<h5>带材质的多边形
+</h5>
+<p>这种图元和上一种是相同的，特别之处是它可以用材质。多边形的每个顶点映射到帧缓存中的材质页中的一点。也可以带辐射阴影。
+<h5>矩形
+</h5>
+<p>一个矩形用左上角定点和宽度、高度来定义，宽度和高度可以是任意的、8×8的或者是16×16的。它画得比多边形快得多，但是没有辐射阴影。
+<h5>精灵
+</h5>
+<p>一个精灵是一个材质矩形，在材质页面的坐标上定义一个矩形。如同矩形那样画得比多边形快，但是没有辐射阴影。虽然它也叫做精灵，但是它和传统意义上的精灵没有任何相同之处，仅仅是一个矩形图像小片。传统的精灵和PSX精灵不同，它不是画到位图里的，而是在显示的时候特别送到屏幕上的特殊位置的。
+<h5>直线
+</h5>
+<p>一条直线是两点之间的连线，可以有阴影。特殊的形式是多点线，可以指定任意多的点。
+<h5>点
+</h5>
+<p>点图元在指定的位置用指定的颜色绘制一个象素，实际是一个特殊的矩形，大小是1×1。
+<p>　
+<h3><font color="#FF00FF"><a name="材质">材质</a></font></h3>
+<p>材质是放到多边形或精灵的一个图像，它需要预先在帧缓存中准备好数据。这个图像叫做材质图案，材质图案放在帧缓存中某个地方的标准大小的材质页中。材质数据可以用3中不同的模式存放。
+<h5>15位直接模式
+</h5>
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="4">索引0
+  <tr>
+    <td>S
+    <td>蓝
+    <td>绿
+    <td>红
+  <tr>
+    <td>15
+    <td>14&nbsp; 10      
+    <td>9&nbsp;&nbsp;&nbsp; 5      
+    <td>4&nbsp;&nbsp;&nbsp; 0      
+</table>
+<p>这表示了每种颜色的值是0～31，最高有效位（S）用来表明这个象素是否半透明的。
+<h5>8位调色板模式
+</h5>
+<p>每个象素用8位定义，它的值通过调色板转换为15位的颜色，很像标准VGA图片。这样可以使用256种15位精度的颜色。
+<table border="1" cellspacing="0">
+  <tr>
+    <td>索引1
+    <td>索引0
+  <tr>
+    <td>15&nbsp;&nbsp; 8      
+    <td>7&nbsp;&nbsp;&nbsp; 0      
+</table>
+<p>索引0是左边象素的调色板索引值，索引1是右边的。
+<h5>4位调色板模式</h5>
+<p>和上面的一样，除了只有16种颜色，数据安排如下：
+<table border="1" cellspacing="0">
+  <tr>
+    <td>索引3
+    <td>索引2
+    <td>索引1
+    <td>索引0
+  <tr>
+    <td>15&nbsp; 12      
+    <td>11&nbsp;&nbsp; 8      
+    <td>7&nbsp;&nbsp;&nbsp; 4      
+    <td>3&nbsp;&nbsp;&nbsp; 0      
+</table>
+<p>索引0到索引3先后从左到右绘制。
+<h5>材质页
+</h5>
+<p>材质页是一个256×256象素的单元，什么颜色模式对它没有影响。就是说，在帧缓存中它在4位调色板模式时是64象素宽，8位调色板模式时128象素宽，15位直接模式时256象素宽。象素的寻址是相对于材质页的位置，而不是帧缓存。所以材质页左上角的材质坐标是（0，0），右下是（255，255），页面可以位于帧缓存中的X乘以64和Y乘以256的地方。可以建立多个材质页，但是图元只能使用一个材质页里的材质。
+<h5>材质窗口
+</h5>
+<p>材质窗口里面的区域是材质页的重复，数据实际上并不知存在于整个材质页，但是GPU当它们存在而重复读取。X和Y和H和W必须乘以8。
+<h5>调色板
+</h5>
+<p>调色板在帧缓存中作如下安排：8位调色板模式是256×1的图像，4位调色板模式是16×1的图像。每个象素是16位的值，前15位用作15位颜色，第16位作半透明标志。调色板数据可以安放在帧缓存中X乘以16（0，16，32，48等等）和Y（0～511）的位置。可以有多个调色板，但是一个图元只能够使用一个。
+<h3>材质高速缓存
+</h3>
+<p>如果要显示带材质的多边形，GPU需要从帧缓存中读取这些东西，将会减慢绘图过程，导致在给定的时间内能够绘制的多边形减少。因此GPU配上了一个材质高速缓存，材质高速缓存的大小依据材质颜色模式而不同。在4位调色板模式，它的大小是64×64，8位调色板模式是32×64，15位直接模式是32×32。<h5>高速缓存块</h5>
+<p>材质页被分割为不重叠的高速缓存块，每块的大小依据颜色模式。这些高速缓存块被平铺在材质页中。
+<table border="1" cellspacing="0">
+  <tr>
+    <td>高速缓存块0
+    <td>1
+    <td>2.....
+  <tr>
+    <td>.<br>
+      .<br>
+      .
+    <td>　
+    <td>　
+</table>
+<h5>高速缓存条目</h5>
+<p>每个高速缓存块分为256个高速缓存条目，按顺序编号，8字节宽，所以一个高速缓存条目包含了16个4位调色板象素，或者8个8位调色板象素，或者4个15位直接象素。
+<p>4位和8位调色板：
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0
+    <td>1
+    <td>2
+    <td>3
+  <tr>
+    <td>4
+    <td>5
+    <td>6
+    <td>7
+  <tr>
+    <td>8
+    <td>9
+    <td colspan="2">...
+  <tr>
+    <td>c
+    <td colspan="3">...
+</table>
+<p>15位直接：
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0
+    <td>1
+    <td>2
+    <td>3
+    <td>4
+    <td>5
+    <td>6
+    <td>7
+  <tr>
+    <td>8
+    <td>9
+    <td>a
+    <td>b
+    <td>c
+    <td>d
+    <td>e
+    <td>f
+  <tr>
+    <td>10
+    <td>11
+    <td colspan="6">...
+  <tr>
+    <td>18
+    <td colspan="7">...
+  <tr>
+    <td colspan="8">...
+</table>
+<p>高速缓存只能保存一个高速缓存条目。
+<p>　
+<h3><font color="#FF00FF"><a name="描绘选项">描绘选项</a></font></h3>
+<p>有3种模式影响GPU向帧缓存描绘图元。<h5>半透明</h5>
+<p>当设置一个象素是半透明时，GPU会读取帧缓存中的目标象素和需要进行半透明的源象素，然后根据选择的半透明模式计算新目标象素的颜色。处理器速度也因此会减慢下来，GPU共有4种半透明模式。<p><o:p>
+</o:p>     
+B是从帧缓存读取的象素，F是半透明象素。<p>●1.0×B＋0.5×F<p>●1.0×B＋1.0×F<p>●1.0×B－1.0×F<p>●1.0×B＋0.25×F<p>每个图元都可以设置新的半透明模式，没有材质的图元可以选择半透明模式。有材质的图元最高有效位是半透明标志，所以一些象素可以设为半透明，其他可以是不透明的。对于调色板模式，半透明位从调色板中取得。<p>当颜色是黑色（BGR＝0），半透明的处理方法和不是黑色（BGR&lt;&gt;0）时不同，如下表：     
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="4">透明处理（命令包的第1位）
+  <tr>
+    <td>BGR
+    <td>半透明标志
+    <td>关
+    <td>开
+  <tr>
+    <td>0，0，0
+    <td>0
+    <td>透明
+    <td>透明
+  <tr>
+    <td>0，0，0
+    <td>1
+    <td>不透明
+    <td>不透明
+  <tr>
+    <td>x，x，x
+    <td>0
+    <td>不透明
+    <td>不透明
+  <tr>
+    <td>x，x，x
+    <td>1
+    <td>不透明
+    <td>透明
+</table>
+<h5>阴影</h5>
+<p>GPU有阴影功能，可以比例缩放图元的颜色到指定的亮度。有2种阴影：单调阴影和辐射阴影。单调阴影用一个亮度值指定整个图元的，辐射阴影则可以指定每个顶点的亮度，中间点自动进行插值。
+<h5>掩码</h5>
+<p>掩码功能可以阻止GPU向帧缓存中特定的象素写东西，就是说GPU向一个掩码区域画图元的时候，先读取它要写向的坐标点的象素，检查掩码标志，如果设置了就不写这个象素。掩码标志是象素的最高有效位，和不透明标志一样。GPU提供了一个掩码模式来设置这些位，写象素的同时设置它们的最高有效位。如果掩码和掩码检测都打开了，GPU就不向设置了最高有效位的象素写东西，而写没有设置的那些象素，同时把它们也设置成掩码象素。
+<p>　
+<h3>绘图环境</h3>
+<p>绘图环境设置GPU绘制图元所需的全部全局参数。<p>●绘图偏移<p>绘图区域的左上角坐标，图元坐标的原点设在这点上。所以绘图偏移是（0，240），一个多边形顶点坐标是（16，20），则它会被画到帧缓存的（0＋16，240＋20）的地方。<p>●绘图修剪区域<p>指定了GPU绘制图元的最大范围，用它来制定绘图区的左上角和右下角。<p>●抖动使能<p>当抖动使能时，GPU绘制阴影时会抖动该区域。内部以24位色运行，抖动颜色后再转会15位色。当它关闭时，只是简单的发散每个颜色的最低3位。<p>●画到显示区使能<p>使能/禁止画到当前显示区域。<p>●掩码使能<p>使能时，所有画到帧缓存的象素，GPU都会加上掩码标志（设置最高有效位）。<p>●掩码判断使能<p>绘图时是否判断帧缓存中的掩码数据。<p>　<h3>显示环境</h3>
+<p>包含了显示信息和显示区域。<p>●帧缓存中的显示区域<p>指定了显示的分辨率，可以是以下大小：<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      
+宽度：256，320，384，512或者640象素<p>&nbsp;&nbsp;&nbsp;  
+高度：240或者480象素<p>这些设置仅仅是指定了显示分分辨率，指明绘制多少象素。<p>●显示（开始/结束）<p>指定屏幕的显示区域和发送多少数据到屏幕，屏幕显示区域大小只有在水平/垂直、开始/结束处于缺省值时才有效。可以通过改变这些来放大/缩小显示屏幕。大多数电视机在周围有一些黑边，可以设置使屏幕早一点开始晚一点结束来消除。象素的大小不会被这些设置改变，GPU只是简单地发送多一些数据到屏幕。<p>●隔行扫描<p>当使能的时候，GPU会交错显示奇数行和偶数行。当使用480行而电视机屏幕又没有480条扫描线时需要使用这个功能。<p>●15位/24位色直接显示<p>切换15位/24位色显示模式<p>●视频模式<p>选择视频模式是PAL或者NTSC制式。<p>　    
+<h3><a name="GPU控制寄存器"><font color="#FF00FF">GPU控制寄存器</font></a></h3>
+<p>有2个32位IO端口用于GPU，分别是0x1F80_1810的GPU数据寄存器和0x1F80_1814的GPU控制/状态寄存器。数据寄存器用于交换数据，控制/状态寄存器在读取时给出GPU状态，在写入时设置控制位。<h5>控制/状态寄存器     
+0x1F80_1814(读取）</h5>
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="25">31&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;     
+      0
+  <tr>
+    <td>lcf
+    <td>dma
+    <td>com
+    <td>img
+    <td>busy
+    <td>?
+    <td>?
+    <td>den
+    <td>isinter
+    <td>isrgb24
+    <td>Video
+    <td>Height
+    <td>Width0
+    <td>Width1
+    <td>?
+    <td>?
+    <td>?
+    <td>me
+    <td>md
+    <td>dfe
+    <td>dtd
+    <td>tp
+    <td>abr
+    <td>ty
+    <td>tx
+  <tr>
+    <td>1
+    <td>2
+    <td>1
+    <td>1
+    <td>1
+    <td>1
+    <td>1
+    <td>1
+    <td>1
+    <td>1
+    <td>1
+    <td>1
+    <td>2
+    <td>1
+    <td>1
+    <td>1
+    <td>1
+    <td>1
+    <td>1
+    <td>1
+    <td>1
+    <td>2
+    <td>2
+    <td>1
+    <td>4
+</table>
+<p>Width（宽度）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>W0
+    <td>W1
+    <td>　
+  <tr>
+    <td>00
+    <td>0
+    <td>256象素
+  <tr>
+    <td>01
+    <td>0
+    <td>320
+  <tr>
+    <td>10
+    <td>0
+    <td>512
+  <tr>
+    <td>11
+    <td>0
+    <td>640
+  <tr>
+    <td>00
+    <td>1
+    <td>384
+</table>
+<p>Height（高度）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0
+    <td>240象素
+  <tr>
+    <td>1
+    <td>480
+</table>
+<p>Video（视频）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0
+    <td>NTSC
+  <tr>
+    <td>1
+    <td>PAL
+</table>
+<p>isrgb24（颜色模式）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0
+    <td>15位直接模式
+  <tr>
+    <td>1
+    <td>24位直接模式
+</table>
+<p>isinter（扫描模式）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0
+    <td>隔行扫描关闭
+  <tr>
+    <td>1
+    <td>隔行扫描打开
+</table>
+<p>den（显示使能）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0
+    <td>显示使能
+  <tr>
+    <td>1
+    <td>显示禁止
+</table>
+<p>busy（忙）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0
+    <td>GPU忙（例如正在绘制图元）
+  <tr>
+    <td>1
+    <td>GPU空闲
+</table>
+<p>img（影像）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0
+    <td>未准备好发送图像（信息包$C0）
+  <tr>
+    <td>1
+    <td>准备好
+</table>
+<p>com（命令）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0
+    <td>未准备好接收命令
+  <tr>
+    <td>1
+    <td>准备好
+</table>
+<p>dma（DMA）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>00
+    <td>DMA关闭，通过GP0通讯
+  <tr>
+    <td>01
+    <td>未知
+  <tr>
+    <td>10
+    <td>DMA CPU--&gt;GPU
+  <tr>
+    <td>11
+    <td>DMA GPU--&gt;CPU
+</table>
+<p>lcf（交错行）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0
+    <td>偶数行交错描绘
+  <tr>
+    <td>1
+    <td>非偶数行交错描绘
+</table>
+<p>tx（材质页X）<br>
+材质页X＝tx×64
+<p>ty（材质页Y）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0
+    <td>0
+  <tr>
+    <td>1
+    <td>256
+</table>
+<p>abr（半透明状态）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>00
+    <td>0.5×B＋0.5×F
+  <tr>
+    <td>01
+    <td>1.0×B＋0.5×F
+  <tr>
+    <td>10
+    <td>1.0×B－1.0×F
+  <tr>
+    <td>11
+    <td>1.0×B＋0.25×F
+</table>
+<p>tp（材质页颜色模式）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>00
+    <td>4位调色板
+  <tr>
+    <td>01
+    <td>8位调色板
+  <tr>
+    <td>10
+    <td>15位
+</table>
+<p>dtd（抖动模式）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0
+    <td>抖动关闭
+  <tr>
+    <td>1
+    <td>抖动开启
+</table>
+<p>dfe（画到显示区域）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0
+    <td>禁止画到当前显示区域
+  <tr>
+    <td>1
+    <td>允许画到当前显示区域
+</table>
+<p>md（掩码模式）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0
+    <td>不设置绘图象素的掩码标志
+  <tr>
+    <td>1
+    <td>设置绘图象素的掩码标志
+</table>
+<p>me（掩码检测）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0
+    <td>不检测掩码标志
+  <tr>
+    <td>1
+    <td>检测掩码标志
+</table>
+<p>　
+<h5>控制/状态寄存器 0x1F80_1814(写入）</h5> 
+<table border="1" cellspacing="0">
+  <tr>
+    <td>命令
+    <td>参数
+  <tr>
+    <td>31&nbsp;&nbsp;&nbsp; 16    
+    <td>15&nbsp;&nbsp;&nbsp;&nbsp; 0    
+</table>
+<p>一个控制命令组成如上表，每个命令的参数都不一样。
+<p>复位GPU
+<table border="1" cellspacing="0">
+  <tr>
+    <td>命令
+    <td>0x00
+  <tr>
+    <td>参数
+    <td>0x000000
+  <tr>
+    <td>描述
+    <td>复位GPU，同时关闭屏幕。（设置状态为$14802000）
+</table>
+<p>复位命令缓存
+<table border="1" cellspacing="0">
+  <tr>
+    <td>命令
+    <td>0x01
+  <tr>
+    <td>参数
+    <td>0x000000
+  <tr>
+    <td>描述
+    <td>复位命令缓存
+</table>
+<p>复位IRQ
+<table border="1" cellspacing="0">
+  <tr>
+    <td>命令
+    <td>0x02
+  <tr>
+    <td>参数
+    <td>0x000000
+  <tr>
+    <td>描述
+    <td>复位IRQ
+</table>
+<p>显示使能
+<table border="1" cellspacing="0">
+  <tr>
+    <td>命令
+    <td>0x03
+  <tr>
+    <td>参数
+    <td>0x000000 显示禁止<br>    
+      0x000001 显示使能    
+  <tr>
+    <td>描述
+    <td>关闭和打开显示，关闭屏幕时如果选择了NTSC模式会使PAL屏幕发送NTSC闪烁
+</table>
+<p>DMA设置
+<table border="1" cellspacing="0">
+  <tr>
+    <td>命令
+    <td>0x04
+  <tr>
+    <td>参数
+    <td>0x000000 DMA禁止<br>    
+      0x000001 未知DMA功能<br>    
+      0x000002 DMA CPU到GPU<br>    
+      0x000003 DMA GPU到CPU    
+  <tr>
+    <td>描述
+    <td>设置DMA方向
+</table>
+<p>开始显示区域
+<table border="1" cellspacing="0">
+  <tr>
+    <td>命令
+    <td>0x05
+  <tr>
+    <td>参数
+    <td>0x00－0x09位 X（0－1023）<br>    
+      0x0A－0x12位 Y（0－512）<br>    
+      即＝Y&lt;&lt;10＋X
+  <tr>
+    <td>描述
+    <td>确定显示区域的左上角
+</table>
+<p>水平显示范围
+<table border="1" cellspacing="0">
+  <tr>
+    <td>命令
+    <td>0x06
+  <tr>
+    <td>参数
+    <td>0x00－0x0B位 X1（0x1F4－0xCDA）<br>    
+      0x0C－0x17位 X2<br>    
+      即＝X1+X2&lt;&lt;12
+  <tr>
+    <td>描述
+    <td>指定水平显示范围，显示相对于显示开始位置，所以X坐标0位于X1。显示结束位置和开始位置无关。在320模式发送到屏幕的象素个数是（X2－X1）/8。实际可见数依赖于电视机（通常是0x260-0xC56)
+</table>
+<p>垂直显示范围
+<table border="1" cellspacing="0">
+  <tr>
+    <td>命令
+    <td>0x07
+  <tr>
+    <td>参数
+    <td>0x00－0x09位 Y1<br>    
+      0x0A－0x14位 Y2<br>    
+      即＝Y1＋Y2&lt;&lt;10
+  <tr>
+    <td>描述
+    <td>指定垂直显示范围，显示相对于显示开始位置，所以Y坐标0位于Y1。结束位置和开始位置无关。在240模式发送到显示器的象素数目是Y2－Y1。(缺省值不确定，大概是NTSC     
+      0x010-0x100,PAL 0x023-0x123)    
+</table>
+<p>显示模式
+<table border="1" cellspacing="0">
+  <tr>
+    <td>命令
+    <td>0x08
+  <tr>
+    <td>参数
+    <td>0x00-0x01位 宽度0<br>    
+      0x02&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 高度<br>    
+      0x03&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 视频模式<br>    
+      0x04&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Isrgb24<br>    
+      0x05&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Isinter<br>    
+      0x06&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 宽度1<br>    
+      0x07&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 方向标志    
+  <tr>
+    <td>描述
+    <td>参见显示模式
+</table>
+<p>未知
+<table border="1" cellspacing="0">
+  <tr>
+    <td>命令
+    <td>0x09
+  <tr>
+    <td>参数
+    <td>0x000001 ??    
+  <tr>
+    <td>描述
+    <td>使用时值为0x000001
+</table>
+<p>GPU信息
+<table border="1" cellspacing="0">
+  <tr>
+    <td>命令
+    <td>0x10
+  <tr>
+    <td>参数
+    <td>0x000000<br>
+      0x000001<br>
+      0x000002<br>
+      0x000003 绘图区域左上角<br>    
+      0x000004 绘图区域右下角<br>    
+      0x000005 绘图偏移<br>    
+      0x000006<br>
+      0x000007 GPU类型，对标准的GPU返回2    
+  <tr>
+    <td>描述
+    <td>返回请求信息，从GP0读取结果。似乎0，1也是返回绘图区域左上角，6也是返回绘图偏移
+</table>
+<p>?????
+<table border="1" cellspacing="0">
+  <tr>
+    <td>命令
+    <td>0x20
+  <tr>
+    <td>参数
+    <td>??????
+  <tr>
+    <td>描述
+    <td>使用时值是0x000504
+</table>
+<h5></h5>
+<h3><font color="#FF00FF"><a name="命令包，数据寄存器">命令包，数据寄存器</a></font></h3>
+<p>图元命令包使用8位命令，它包含了一个3位的类型区段和一个5位的选项区段，选项根据类型不同而不同。
+<p>类型
+<table border="1" cellspacing="0">
+  <tr>
+    <td>000
+    <td>GPU命令
+  <tr>
+    <td>001
+    <td>多边形图元
+  <tr>
+    <td>010
+    <td>直线图元
+  <tr>
+    <td>011
+    <td>精灵图元
+  <tr>
+    <td>100
+    <td>传输命令
+  <tr>
+    <td>111
+    <td>环境命令
+</table>
+<p>配置图元的选项块如下：
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="8">多边形
+  <tr>
+    <td colspan="3">类型
+    <td colspan="5">选项
+  <tr>
+    <td>0
+    <td>0
+    <td>1
+    <td>IIP
+    <td>VTX
+    <td>TME
+    <td>ABE
+    <td>TGE
+  <tr>
+    <td>7
+    <td>6
+    <td>5
+    <td>4
+    <td>3
+    <td>2
+    <td>1
+    <td>0
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="8">直线
+  <tr>
+    <td colspan="3">类型
+    <td colspan="5">选项
+  <tr>
+    <td>0
+    <td>1
+    <td>0
+    <td>IIP
+    <td>PLL
+    <td>0
+    <td>ABE
+    <td>0
+  <tr>
+    <td>7
+    <td>6
+    <td>5
+    <td>4
+    <td>3
+    <td>2
+    <td>1
+    <td>0
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="8">精灵
+  <tr>
+    <td colspan="3">类型
+    <td colspan="5">选项
+  <tr>
+    <td>1
+    <td>0
+    <td>0
+    <td colspan="2">Size
+    <td>TME
+    <td>ABE
+    <td>0
+  <tr>
+    <td>7
+    <td>6
+    <td>5
+    <td>4
+    <td>3
+    <td>2
+    <td>1
+    <td>0
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td>IIP
+    <td>0 简单阴影<br>    
+      1 辐射阴影    
+  <tr>
+    <td>VTX
+    <td>0 3顶点多边形<br>    
+      1 4顶点多边形    
+  <tr>
+    <td>TME
+    <td>0 材质映射关闭<br>    
+      1 材质映射打开    
+  <tr>
+    <td>ABE
+    <td>0 半透明关闭<br>    
+      1 半透明打开    
+  <tr>
+    <td>TGE
+    <td>0 映射材质时计算亮度<br>    
+      1 关闭（只描绘材质）    
+  <tr>
+    <td>Size
+    <td>00 自由尺寸（通过W/H指定）<br>    
+      01 1×1<br>    
+      10 8×8<br>    
+      11 16×16    
+  <tr>
+    <td>PLL
+    <td>0 单线（2个顶点）<br>    
+      1 多段线（n个顶点）    
+</table>
+<p>●颜色信息
+<p>颜色信息是24位传送的，被GPU解析为15位的。
+<table border="1" cellspacing="0">
+  <tr>
+    <td>蓝色
+    <td>绿色
+    <td>红色
+  <tr>
+    <td>23&nbsp;&nbsp; 16    
+    <td>15&nbsp;&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp;&nbsp; 0    
+</table>
+<p>●阴影信息
+<p>带材质图元阴影数据用这个包传送，和颜色数据一样排列，RGB值控制了各种颜色（0x00-0x7F）的亮度。颜色值为0x80将取前者作为数据。
+<table border="1" cellspacing="0">
+  <tr>
+    <td>蓝色
+    <td>绿色
+    <td>红色
+  <tr>
+    <td>23&nbsp;&nbsp; 16    
+    <td>15&nbsp;&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp;&nbsp; 0    
+</table>
+<p>材质包信息
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="7">0
+    <td colspan="2">TP
+    <td colspan="2">ABR
+    <td>TY
+    <td colspan="4">TX
+  <tr>
+    <td>15
+    <td>14
+    <td>13
+    <td>12
+    <td>11
+    <td>10
+    <td>9
+    <td>8
+    <td>7
+    <td>6
+    <td>5
+    <td>4
+    <td>3
+    <td>2
+    <td>1
+    <td>0
+</table>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>TX
+    <td>0x0-0xF X×64 材质页X坐标    
+  <tr>
+    <td>TY
+    <td>0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp;&nbsp;     
+      材质页Y坐标<br>
+      1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 256    
+  <tr>
+    <td>ABR
+    <td>0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0.5×B＋0.5×F 半透明模式<br>    
+      1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1.0×B＋1.0×F<br>    
+      2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1.0×B－1.0×F<br>    
+      3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1.0×B＋0.25×F    
+  <tr>
+    <td>TP
+    <td>0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 4位调色板<br>    
+      1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8位调色板<br>    
+      2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 15位调色板    
+</table>
+<p>●调色板ID
+<p>指定调色板数据的位置
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="8">Y坐标0－511
+    <td colspan="8">X坐标X/16
+  <tr>
+    <td>15
+    <td>14
+    <td>13
+    <td>12
+    <td>11
+    <td>10
+    <td>9
+    <td>8
+    <td>7
+    <td>6
+    <td>5
+    <td>4
+    <td>3
+    <td>2
+    <td>1
+    <td>0
+</table>
+<h5>包列表</h5>
+<p>包作为成组数据传送到GPU，每个都是一个字长。数据必须顺序写到GPU数据寄存器（0x1F801810），当所有的数据都被接收后，GPU开始操作。
+<h5>包命令一览：</h5>
+<p>●图元绘图包
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0x20
+    <td>单色3点多边形
+  <tr>
+    <td>0x24
+    <td>材质3点多边形
+  <tr>
+    <td>0x28
+    <td>单色4点多边形
+  <tr>
+    <td>0x2C
+    <td>材质4点多边形
+  <tr>
+    <td>0x30
+    <td>渐变3点多边形
+  <tr>
+    <td>0x34
+    <td>渐变材质3点多边形
+  <tr>
+    <td>0x38
+    <td>渐变4点多边形
+  <tr>
+    <td>0x3C
+    <td>渐变材质4点多边形
+  <tr>
+    <td>0x40
+    <td>单色直线
+  <tr>
+    <td>0x48
+    <td>单色多段线
+  <tr>
+    <td>0x50
+    <td>渐变直线
+  <tr>
+    <td>0x58
+    <td>渐变多段线
+  <tr>
+    <td>0x60
+    <td>矩形
+  <tr>
+    <td>0x64
+    <td>精灵
+  <tr>
+    <td>0x68
+    <td>点
+  <tr>
+    <td>0x70
+    <td>8×8矩形
+  <tr>
+    <td>0x74
+    <td>8×8精灵
+  <tr>
+    <td>0x78
+    <td>16×16矩形
+  <tr>
+    <td>0x7c
+    <td>16×16精灵
+</table>
+<p>●GPU命令和传送包
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0x01
+    <td>清除高速缓存
+  <tr>
+    <td>0x02
+    <td>帧缓存矩形绘图
+  <tr>
+    <td>0x80
+    <td>在帧缓存中移动图像
+  <tr>
+    <td>0xA0
+    <td>发送图像到帧缓存
+  <tr>
+    <td>0xC0
+    <td>从帧缓存拷贝图像
+</table>
+<p>●绘图模式/环境设置包
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0xE1
+    <td>绘图模式设置
+  <tr>
+    <td>0xE2
+    <td>材质窗口设置
+  <tr>
+    <td>0xE3
+    <td>设置绘图区域左上角
+  <tr>
+    <td>0xE4
+    <td>设置绘图区域右下角
+  <tr>
+    <td>0xE5
+    <td>绘图便宜
+  <tr>
+    <td>0xE6
+    <td>掩码设置
+</table>
+<h3>　</h3>
+<h3><font color="#FF00FF"><a name="包描述">包描述</a></font></h3>
+<h5>图元包</h5>
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x20 单色3点多边形    
+    <td>　
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+    <td>　
+  <tr>
+    <td>1
+    <td>0x20
+    <td colspan="3">BGR
+    <td>命令＋颜色
+  <tr>
+    <td>2
+    <td colspan="2">Y0
+    <td colspan="2">X0
+    <td>顶点0
+  <tr>
+    <td>3
+    <td colspan="2">Y1
+    <td colspan="2">X1
+    <td>顶点1
+  <tr>
+    <td>4
+    <td colspan="2">Y2
+    <td colspan="2">X2
+    <td>顶点2
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x24 材质3点多边形    
+    <td>　
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+    <td>　
+  <tr>
+    <td>1
+    <td>0x24
+    <td colspan="3">BGR
+    <td>命令＋颜色
+  <tr>
+    <td>2
+    <td colspan="2">Y0
+    <td colspan="2">X0
+    <td>顶点0
+  <tr>
+    <td>3
+    <td colspan="2">调色板
+    <td>V0
+    <td>U0
+    <td>调色板ID＋材质坐标顶点0
+  <tr>
+    <td>4
+    <td colspan="2">Y1
+    <td colspan="2">X1
+    <td>顶点1
+  <tr>
+    <td>5
+    <td colspan="2">材质页
+    <td>V1
+    <td>U1
+    <td>材质页＋材质坐标顶点1
+  <tr>
+    <td>6
+    <td colspan="2">Y2
+    <td colspan="2">X2
+    <td>顶点2
+  <tr>
+    <td>7
+    <td colspan="2">　
+    <td>V2
+    <td>U2
+    <td>材质坐标顶点2
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x28 单色4点多边形    
+    <td>　
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+    <td>　
+  <tr>
+    <td>1
+    <td>0x28
+    <td colspan="3">BGR
+    <td>命令＋颜色
+  <tr>
+    <td>2
+    <td colspan="2">Y0
+    <td colspan="2">X0
+    <td>顶点0
+  <tr>
+    <td>3
+    <td colspan="2">Y1
+    <td colspan="2">X1
+    <td>顶点1
+  <tr>
+    <td>4
+    <td colspan="2">Y2
+    <td colspan="2">X2
+    <td>顶点2
+  <tr>
+    <td>5
+    <td colspan="2">Y3
+    <td colspan="2">X3
+    <td>顶点3
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x2C 材质4点多边形    
+    <td>　
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+    <td>　
+  <tr>
+    <td>1
+    <td>0x2C
+    <td colspan="3">BGR
+    <td>命令＋颜色
+  <tr>
+    <td>2
+    <td colspan="2">Y0
+    <td colspan="2">X0
+    <td>顶点0
+  <tr>
+    <td>3
+    <td colspan="2">调色板
+    <td>V0
+    <td>U0
+    <td>调色板ID＋材质坐标顶点0
+  <tr>
+    <td>4
+    <td colspan="2">Y1
+    <td colspan="2">X1
+    <td>顶点1
+  <tr>
+    <td>5
+    <td colspan="2">材质页
+    <td>V1
+    <td>U1
+    <td>材质页＋材质坐标顶点1
+  <tr>
+    <td>6
+    <td colspan="2">Y2
+    <td colspan="2">X2
+    <td>顶点2
+  <tr>
+    <td>7
+    <td colspan="2">　
+    <td>V2
+    <td>U2
+    <td>材质坐标顶点2
+  <tr>
+    <td>8
+    <td colspan="2">Y3
+    <td colspan="2">X3
+    <td>顶点3
+  <tr>
+    <td>9
+    <td colspan="2">　
+    <td>V3
+    <td>U3
+    <td>材质坐标顶点3
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x30 渐变3点多边形    
+    <td>　
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+    <td>　
+  <tr>
+    <td>1
+    <td>0x30
+    <td colspan="3">BGR0
+    <td>命令＋颜色定点0
+  <tr>
+    <td>2
+    <td colspan="2">Y0
+    <td colspan="2">X0
+    <td>顶点0
+  <tr>
+    <td>3
+    <td>　
+    <td colspan="3">BGR1
+    <td>颜色顶点1
+  <tr>
+    <td>4
+    <td colspan="2">Y1
+    <td colspan="2">X1
+    <td>顶点1
+  <tr>
+    <td>5
+    <td>　
+    <td colspan="3">BGR2
+    <td>颜色顶点2
+  <tr>
+    <td>6
+    <td colspan="2">Y2
+    <td colspan="2">X2
+    <td>顶点2
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x34 阴影材质3点多边形    
+    <td>　
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+    <td>　
+  <tr>
+    <td>1
+    <td>0x34
+    <td colspan="3">BGR0
+    <td>命令＋颜色顶点0
+  <tr>
+    <td>2
+    <td colspan="2">Y0
+    <td colspan="2">X0
+    <td>顶点0
+  <tr>
+    <td>3
+    <td colspan="2">调色板
+    <td>V0
+    <td>U0
+    <td>调色板ID＋材质坐标顶点0
+  <tr>
+    <td>4
+    <td>　
+    <td colspan="3">BGR1
+    <td>颜色顶点1
+  <tr>
+    <td>5
+    <td colspan="2">Y1
+    <td colspan="2">X1
+    <td>顶点1
+  <tr>
+    <td>6
+    <td colspan="2">材质页
+    <td>V1
+    <td>U1
+    <td>材质页＋材质坐标顶点1
+  <tr>
+    <td>7
+    <td>　
+    <td colspan="3">BGR2
+    <td>颜色顶点2
+  <tr>
+    <td>8
+    <td colspan="2">Y2
+    <td colspan="2">X2
+    <td>顶点2
+  <tr>
+    <td>9
+    <td colspan="2">　
+    <td>V2
+    <td>U2
+    <td>材质坐标顶点2
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x38 渐变4点多边形    
+    <td>　
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+    <td>　
+  <tr>
+    <td>1
+    <td>0x38
+    <td colspan="3">BGR0
+    <td>命令＋颜色定点0
+  <tr>
+    <td>2
+    <td colspan="2">Y0
+    <td colspan="2">X0
+    <td>顶点0
+  <tr>
+    <td>3
+    <td>　
+    <td colspan="3">BGR1
+    <td>颜色顶点1
+  <tr>
+    <td>4
+    <td colspan="2">Y1
+    <td colspan="2">X1
+    <td>顶点1
+  <tr>
+    <td>5
+    <td>　
+    <td colspan="3">BGR2
+    <td>颜色顶点2
+  <tr>
+    <td>6
+    <td colspan="2">Y2
+    <td colspan="2">X2
+    <td>顶点2
+  <tr>
+    <td>7
+    <td>　
+    <td colspan="3">BGR3
+    <td>颜色顶点3
+  <tr>
+    <td>8
+    <td colspan="2">Y3
+    <td colspan="2">X3
+    <td>顶点3
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x3C 阴影材质4点多边形    
+    <td>　
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+    <td>　
+  <tr>
+    <td>1
+    <td>0x3C
+    <td colspan="3">BGR0
+    <td>命令＋颜色顶点0
+  <tr>
+    <td>2
+    <td colspan="2">Y0
+    <td colspan="2">X0
+    <td>顶点0
+  <tr>
+    <td>3
+    <td colspan="2">调色板
+    <td>V0
+    <td>U0
+    <td>调色板ID＋材质坐标顶点0
+  <tr>
+    <td>4
+    <td>　
+    <td colspan="3">BGR1
+    <td>颜色顶点1
+  <tr>
+    <td>5
+    <td colspan="2">Y1
+    <td colspan="2">X1
+    <td>顶点1
+  <tr>
+    <td>6
+    <td colspan="2">材质页
+    <td>V1
+    <td>U1
+    <td>材质页＋材质坐标顶点1
+  <tr>
+    <td>7
+    <td>　
+    <td colspan="3">BGR2
+    <td>颜色顶点2
+  <tr>
+    <td>8
+    <td colspan="2">Y2
+    <td colspan="2">X2
+    <td>顶点2
+  <tr>
+    <td>9
+    <td colspan="2">　
+    <td>V2
+    <td>U2
+    <td>材质坐标顶点2
+  <tr>
+    <td>10
+    <td>　
+    <td colspan="3">BGR3
+    <td>颜色顶点3
+  <tr>
+    <td>11
+    <td colspan="2">Y3
+    <td colspan="2">X3
+    <td>顶点3
+  <tr>
+    <td>12
+    <td colspan="2">　
+    <td>V3
+    <td>U3
+    <td>材质坐标顶点3
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x40 单色直线    
+    <td>　
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+    <td>　
+  <tr>
+    <td>1
+    <td>0x40
+    <td colspan="3">BGR
+    <td>命令＋颜色
+  <tr>
+    <td>2
+    <td colspan="2">Y0
+    <td colspan="2">X0
+    <td>顶点0
+  <tr>
+    <td>3
+    <td colspan="2">Y1
+    <td colspan="2">X1
+    <td>顶点1
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x48 单色多段线    
+    <td>　
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+    <td>　
+  <tr>
+    <td>1
+    <td>0x40
+    <td colspan="3">BGR
+    <td>命令＋颜色
+  <tr>
+    <td>2
+    <td colspan="2">Y0
+    <td colspan="2">X0
+    <td>顶点0
+  <tr>
+    <td>3
+    <td colspan="2">Y1
+    <td colspan="2">X1
+    <td>顶点1
+  <tr>
+    <td>4
+    <td colspan="2">Y2
+    <td colspan="2">X2
+    <td>顶点2
+  <tr>
+    <td>...
+    <td colspan="2">Yn
+    <td colspan="2">Xn
+    <td>顶点n
+  <tr>
+    <td>...
+    <td colspan="4">0x55555555
+    <td>终止代码
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x50 渐变直线    
+    <td>　
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+    <td>　
+  <tr>
+    <td>1
+    <td>0x50
+    <td colspan="3">BGR0
+    <td>命令＋颜色定点0
+  <tr>
+    <td>2
+    <td colspan="2">Y0
+    <td colspan="2">X0
+    <td>顶点0
+  <tr>
+    <td>3
+    <td>　
+    <td colspan="3">BGR1
+    <td>颜色顶点1
+  <tr>
+    <td>4
+    <td colspan="2">Y1
+    <td colspan="2">X1
+    <td>顶点1
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x58 渐变多段线    
+    <td>　
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+    <td>　
+  <tr>
+    <td>1
+    <td>0x58
+    <td colspan="3">BGR0
+    <td>命令＋颜色定点0
+  <tr>
+    <td>2
+    <td colspan="2">Y0
+    <td colspan="2">X0
+    <td>顶点0
+  <tr>
+    <td>3
+    <td>　
+    <td colspan="3">BGR1
+    <td>颜色顶点1
+  <tr>
+    <td>4
+    <td colspan="2">Y1
+    <td colspan="2">X1
+    <td>顶点1
+  <tr>
+    <td>5
+    <td>　
+    <td colspan="3">BGR2
+    <td>颜色顶点2
+  <tr>
+    <td>6
+    <td colspan="2">Y2
+    <td colspan="2">X2
+    <td>顶点2
+  <tr>
+    <td>...
+    <td>　
+    <td colspan="3">BGRn
+    <td>颜色顶点3
+  <tr>
+    <td>...
+    <td colspan="2">Yn
+    <td colspan="2">Xn
+    <td>顶点3
+  <tr>
+    <td>...
+    <td colspan="4">0x55555555
+    <td>终止代码
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x60 矩形    
+    <td>　
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+    <td>　
+  <tr>
+    <td>1
+    <td>0x60
+    <td colspan="3">BGR
+    <td>命令＋颜色
+  <tr>
+    <td>2
+    <td colspan="2">Y
+    <td colspan="2">X
+    <td>左上角坐标
+  <tr>
+    <td>3
+    <td colspan="2">H
+    <td colspan="2">W
+    <td>高度和宽度
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x64 精灵    
+    <td>　
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+    <td>　
+  <tr>
+    <td>1
+    <td>0x64
+    <td colspan="3">BGR
+    <td>命令＋颜色
+  <tr>
+    <td>2
+    <td colspan="2">Y
+    <td colspan="2">X
+    <td>左上角坐标
+  <tr>
+    <td>3
+    <td colspan="2">调色板
+    <td>V
+    <td>U
+    <td>调色板ID和材质坐标页Y，X
+  <tr>
+    <td>4
+    <td colspan="2">H
+    <td colspan="2">W
+    <td>高度和宽度
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x68 点    
+    <td>　
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+    <td>　
+  <tr>
+    <td>1
+    <td>0x68
+    <td colspan="3">BGR
+    <td>命令＋颜色
+  <tr>
+    <td>2
+    <td colspan="2">Y
+    <td colspan="2">X
+    <td>坐标
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x70 8×8矩形    
+    <td>　
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+    <td>　
+  <tr>
+    <td>1
+    <td>0x70
+    <td colspan="3">BGR
+    <td>命令＋颜色
+  <tr>
+    <td>2
+    <td colspan="2">Y
+    <td colspan="2">X
+    <td>坐标
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x74 8×8精灵    
+    <td>　
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+    <td>　
+  <tr>
+    <td>1
+    <td>0x74
+    <td colspan="3">BGR
+    <td>命令＋颜色
+  <tr>
+    <td>2
+    <td colspan="2">Y
+    <td colspan="2">X
+    <td>坐标
+  <tr>
+    <td>3
+    <td colspan="2">调色板
+    <td>V
+    <td>U
+    <td>调色板ID和材质坐标页Y，X
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x78 16×16矩形    
+    <td>　
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+    <td>　
+  <tr>
+    <td>1
+    <td>0x78
+    <td colspan="3">BGR
+    <td>命令＋颜色
+  <tr>
+    <td>2
+    <td colspan="2">Y
+    <td colspan="2">X
+    <td>坐标
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x7C 16×16精灵    
+    <td>　
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+    <td>　
+  <tr>
+    <td>1
+    <td>0x7C
+    <td colspan="3">BGR
+    <td>命令＋颜色
+  <tr>
+    <td>2
+    <td colspan="2">Y
+    <td colspan="2">X
+    <td>坐标
+  <tr>
+    <td>3
+    <td colspan="2">调色板
+    <td>V
+    <td>U
+    <td>调色板ID和材质坐标页Y，X
+</table>
+<p>　
+<h5>GPU命令和传输包</h5>
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x01 清除高速缓存    
+    <td>　
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+    <td>　
+  <tr>
+    <td>1
+    <td>0x01
+    <td colspan="3">　
+    <td>清除高速缓存
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x02 帧缓存矩形绘图    
+    <td rowspan="2">在帧缓存中用RGB颜色填充矩形，这个命令无视绘图环境的设置。<br>
+      坐标是绝对帧缓存坐标，最大宽度是0x3FF，最大高度是0x1FF。
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+  <tr>
+    <td>1
+    <td>0x02
+    <td colspan="3">BGR
+    <td>命令＋颜色
+  <tr>
+    <td>2
+    <td colspan="2">Y
+    <td colspan="2">X
+    <td>左上角坐标
+  <tr>
+    <td>3
+    <td colspan="2">H
+    <td colspan="2">W
+    <td>高度和宽度
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x80 帧缓存矩形拷贝    
+    <td rowspan="2">　
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+  <tr>
+    <td>1
+    <td>0x80
+    <td colspan="3">BGR
+    <td>命令＋颜色
+  <tr>
+    <td>2
+    <td colspan="2">SY
+    <td colspan="2">SX
+    <td>源坐标
+  <tr>
+    <td>2
+    <td colspan="2">DY
+    <td colspan="2">DX
+    <td>目标坐标
+  <tr>
+    <td>3
+    <td colspan="2">H
+    <td colspan="2">W
+    <td>高度和宽度
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x01 0xA0 发送图像到帧缓存    
+    <td rowspan="2">从主内存向帧缓存传送数据。
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+  <tr>
+    <td>1
+    <td>0x01
+    <td colspan="3">　
+    <td>清除高速缓存
+  <tr>
+    <td>2
+    <td>0xA0
+    <td colspan="3">BGR
+    <td>命令＋颜色
+  <tr>
+    <td>3
+    <td colspan="2">Y
+    <td colspan="2">X
+    <td>目标坐标
+  <tr>
+    <td>4
+    <td colspan="2">H
+    <td colspan="2">W
+    <td>高度和宽度
+  <tr>
+    <td>5
+    <td colspan="2">象素1
+    <td colspan="2">象素0
+    <td>图像数据
+  <tr>
+    <td>6..
+    <td colspan="2">
+    <td colspan="2">　
+    <td>
+  <tr>
+    <td>　
+    <td colspan="2">象素n
+    <td colspan="2">象素n－1
+    <td>
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="5">0x01 0xC0 从帧缓存拷贝图像    
+    <td rowspan="2">从帧缓存向主内存传送数据。在读取数据之前等待状态寄存器第27位为1
+  <tr>
+    <td>顺序
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+  <tr>
+    <td>1
+    <td>0x01
+    <td colspan="3">　
+    <td>清除高速缓存
+  <tr>
+    <td>2
+    <td>0xC0
+    <td colspan="3">BGR
+    <td>命令＋颜色
+  <tr>
+    <td>3
+    <td colspan="2">Y
+    <td colspan="2">X
+    <td>目标坐标
+  <tr>
+    <td>4
+    <td colspan="2">H
+    <td colspan="2">W
+    <td>高度和宽度
+  <tr>
+    <td>5
+    <td colspan="2">象素1
+    <td colspan="2">象素0
+    <td>图像数据
+  <tr>
+    <td>6..
+    <td colspan="2">
+    <td colspan="2">　
+    <td>
+  <tr>
+    <td>　
+    <td colspan="2">象素n
+    <td colspan="2">象素n－1
+    <td>
+</table>
+<h5></h5>
+<h5>绘图模式/环境设置包</h5>
+<p>其中有些也是图元包，无论什么情况它都是GPOU最后接收的包。所以如果一个图元设置了材质页信息，它会覆盖存在的数据，即使它是由0xE?包发送的。
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="8">0xE1 绘图模式设置    
+  <tr>
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 11    
+    <td>10
+    <td>9
+    <td>8&nbsp;&nbsp; 7    
+    <td>6&nbsp;&nbsp; 5    
+    <td>4
+    <td>3&nbsp;&nbsp; 0    
+  <tr>
+    <td>0xE1
+    <td>　
+    <td>dfe
+    <td>dtd
+    <td>tp
+    <td>abr
+    <td>ty
+    <td>tx
+</table>
+<p>对于某些不是标准类新的GPU（0x10000007命令不返回2），状态寄存器的第11－13位似乎也可以用这个命令传送。
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="6">0xE1 材质窗口设置    
+  <tr>
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 10    
+    <td>19&nbsp; 15    
+    <td>14&nbsp; 10    
+    <td>9&nbsp;&nbsp; 5    
+    <td>4&nbsp;&nbsp; 0    
+  <tr>
+    <td>0xE2
+    <td>　
+    <td>twx
+    <td>twt
+    <td>tww
+    <td>twh
+</table>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>twx 
+    <td>材质窗口X，（twx×8）
+  <tr>
+    <td>twy
+    <td>材质窗口Y，（twy×8）
+  <tr>
+    <td>tww
+    <td>材质窗口宽度，256－（tww×8）
+  <tr>
+    <td>twh
+    <td>材质窗口高度，256－（twh×8）
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="4">0xE3 设置绘图区域左上角    
+  <tr>
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+  <tr>
+    <td>0xE3
+    <td>　
+    <td>Y
+    <td>X
+</table>
+<p>设置绘图区域左上角，X和Y是帧缓存绝对坐标。
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="4">0xE4 设置绘图区域右下角    
+  <tr>
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+  <tr>
+    <td>0xE4
+    <td>　
+    <td>Y
+    <td>X
+</table>
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="4">0xE5 绘图偏移    
+  <tr>
+    <td>31&nbsp; 24    
+    <td>23&nbsp; 16    
+    <td>15&nbsp;&nbsp; 8    
+    <td>7&nbsp;&nbsp;&nbsp; 0    
+  <tr>
+    <td>0xE5
+    <td>　
+    <td>Y便宜
+    <td>X便宜
+</table>
+<p>偏移Y＝Y&lt;&lt;11，设置绘图区域便宜。X和Y是帧缓存中的便宜。
+<p>　
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="4">0xE6 绘图掩码    
+  <tr>
+    <td>31&nbsp;&nbsp;&nbsp;&nbsp; 24    
+    <td>23&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2    
+    <td>1
+    <td>0
+  <tr>
+    <td>0xE6
+    <td>　
+    <td>掩码2
+    <td>掩码1
+</table>
+<p>掩码1：绘图时设置掩码位，1＝开
+<p>掩码2：绘图掩码检测，1＝开
+<h3></h3>
+<h3><font color="#FF00FF"><a name="DMA和GPU">DMA和GPU</a></font></h3>
+<p>GPU有两个DMA通道。DMA通道2用来发送链接包列表到GPU以及和帧缓存传送图像数据。DMA通道6用来建立一个空的链接列表，其中每个条目指向前一个条目（例如方向清空一个顺序表OT）。<p>第二DMA内存地址寄存器（D2_MADR)    
+0x1F80_10A0
+<table border="1" cellspacing="0">
+  <tr>
+    <td>31&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0   
+  <tr>
+    <td>MADR
+</table>
+<p>MADR：指向DMA将开始读写的虚拟地址。
+<p>第二DMA块控制寄存器（D2_BCR) 0x1F80_10A4   
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="2">31&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0   
+  <tr>
+    <td>BA
+    <td>BS
+  <tr>
+    <td>16
+    <td>16
+</table>
+<p>BA: 块的总数   
+<p>BS：块的大小（按字计算）
+<p>设置DMA块，当开始DMA后将会发送BA个BS字长的块。不要设置块大小大于0x10字，因为GPU命令缓存只有64字节。
+<p>第二DMA通道控制寄存器（D2_CHCR) 0x1F80_10A8   
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="7">31&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    
+      0
+  <tr>
+    <td>0
+    <td>TR
+    <td>0
+    <td>LI
+    <td>CO
+    <td>0
+    <td>DR
+  <tr>
+    <td>7
+    <td>1
+    <td>13
+    <td>1
+    <td>1
+    <td>8
+    <td>1
+</table>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>TR
+    <td>0 没有DMA传输忙<br>   
+      1 开始DMA传输/DMA传输忙   
+  <tr>
+    <td>LR
+    <td>1 传输链接列表（只限于GPU）   
+  <tr>
+    <td>CO
+    <td>1 传输连续流数据   
+  <tr>
+    <td>DR
+    <td>1 方向：从内存<br>   
+      0 方向：向内存   
+</table>
+<p>用来配置DMA通道，当第18位被设置时开始DMA，当第18位被清除DMA立刻结束。要向VRAM发送或接收数据，先向GPU发送适当的包（0xA0/0xC0)。
+<p>第六DMA内存地址寄存器(D6_MADR) 0x1F80_10E0   
+<table border="1" cellspacing="0">
+  <tr>
+    <td>31&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0   
+  <tr>
+    <td>MADR
+</table>
+<p>MADR：指向DMA将开始读写的虚拟地址。
+<p>第六DMA块控制寄存器(D6_BCR) 0x1F80_10E4   
+<table border="1" cellspacing="0">
+  <tr>
+    <td>31&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0   
+  <tr>
+    <td>BC
+</table>
+<p>BC：列表条目数
+<p>第六DMA通道控制寄存器(D6_CHCR) 0x1F80_10E8   
+<table border="1" cellspacing="0">
+  <tr>
+    <td colspan="7">31&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    
+      0
+  <tr>
+    <td>0
+    <td>TR
+    <td>0
+    <td>LI
+    <td>CO
+    <td>0
+    <td>DR
+  <tr>
+    <td>7
+    <td>1
+    <td>13
+    <td>1
+    <td>1
+    <td>8
+    <td>1
+</table>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>TR
+    <td>0 没有DMA传输忙<br>   
+      1 开始DMA传输/DMA传输忙   
+  <tr>
+    <td>LR
+    <td>1 传输链接列表（只限于GPU）   
+  <tr>
+    <td>CO
+    <td>1 传输连续流数据   
+  <tr>
+    <td>DR
+    <td>1 方向：从内存<br>   
+      0 方向：向内存   
+</table>
+<p>用来配置DMA通道，当第18位被设置时开始DMA，当第18位被清除DMA立刻结束。要向VRAM发送或接收数据，先向GPU发送适当的包（0xA0/0xC0)。当这个寄存器被设为0x11000002，DMA通道会创建一个D6_BCR个条目地址位于D_MADR的空链接列表。每个条目大小是0，指向前一个条目。如果D6_MADR＝    
+0x80100010，D6_BCR＝0x00000004，会生成一个列表如下：
+<table border="1" cellspacing="0">
+  <tr>
+    <td>0x8010_0000
+    <td>0x00FF_FFFF
+  <tr>
+    <td>0x8010_0004
+    <td>0x0010_0000
+  <tr>
+    <td>0x8010_0008
+    <td>0x0010_0004
+  <tr>
+    <td>0x8010_000C
+    <td>0x0010_0008
+  <tr>
+    <td>0x8010_0010
+    <td>0x0010_000C
+</table>
+<p>DMA主控制寄存器(DPCR) 0x1F80_10F0   
+<table border="1" cellspacing="0">
+  <tr>
+    <td>&nbsp;&nbsp;&nbsp;&nbsp;
+    <td>DMA6
+    <td>DMA5
+    <td>DMA4
+    <td>DMA3
+    <td>DMA2
+    <td>DMA1
+    <td>DMA0
+  <tr>
+    <td>4
+    <td>4
+    <td>4
+    <td>4
+    <td>4
+    <td>4
+    <td>4
+    <td>4
+</table>
+<p>在这个寄存器中每个寄存器分配了一个4位的控制块。
+<table border="1" cellspacing="0">
+  <tr>
+    <td>位3
+    <td>1＝DMA使能
+  <tr>
+    <td>2
+    <td>未知
+  <tr>
+    <td>1
+    <td>未知
+  <tr>
+    <td>0
+    <td>未知
+</table>
+<h5>　</h5>
+<h5>一步步建普通GPU函数</h5>
+<p>●初始化GPU
+<table border="1" cellspacing="0">
+  <tr>
+    <td>1
+    <td>复位GPU（GP1命令0x000），同时关闭显示器
+  <tr>
+    <td>2
+    <td>设置水平和垂直开始/结束（GP1命令0x06,0x07）
+  <tr>
+    <td>3
+    <td>设置显示模式（GP1命令0x08）
+  <tr>
+    <td>4
+    <td>设置显示偏移（GP1命令0x05）
+  <tr>
+    <td>5
+    <td>设置绘图模式（GP0命令0xE1）
+  <tr>
+    <td>6
+    <td>设置绘图区域（GP0命令0xE3,0xE4）
+  <tr>
+    <td>7
+    <td>设置绘图便宜（GP0命令0xE5）
+  <tr>
+    <td>8
+    <td>使能显示
+</table>
+<p>●发送链接列表
+<p>通常发送大量图元是使用链接列表DMA传送，列表最后一个条目的指针应该是0xFFFFFF，是终止符。如果条目大小设为0，没有数据被传送到GPU，然后处理下一个条目。要发送一个列表应该：
+<table border="1" cellspacing="0">
+  <tr>
+    <td>1
+    <td>等待GPU准备好接收命令（第0x1C位＝1）
+  <tr>
+    <td>2
+    <td>使能第二DMA通道
+  <tr>
+    <td>3
+    <td>设置GPU到DMA CPU--&gt;GPU模式（0x04000002）   
+  <tr>
+    <td>4
+    <td>设置D2_BCR为0
+  <tr>
+    <td>5
+    <td>设置D2_CHCR到链接模式，内存--&gt;GPU和使能DMA0x01000401）
+</table>
+<p>●通过DMA上传图像：
+<table border="1" cellspacing="0">
+  <tr>
+    <td>1
+    <td>等待GPU空闲和DMA完成。如果必要，使能第二DMA通道
+  <tr>
+    <td>2
+    <td>发送‘发送图像到VRAM’图元（可以通过DMA发送，使用上面描述的链接列表）
+  <tr>
+    <td>3
+    <td>设置DMA到CPU--&gt;GPU（0x04000002）（如果你没有在前面完成了这个步骤）
+  <tr>
+    <td>4
+    <td>设置D2_MADR到列表的开始
+  <tr>
+    <td>5
+    <td>设置D2_BCR的第31－16位＝要发送的字数（H×W/2）<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    
+      15－0位＝块大小为1个字（0x01）<br>
+      如果H×W是奇数，加1。（象素是2个字节，发送一个额外的空象素填补内容）
+  <tr>
+    <td>6
+    <td>设置D2_CHCR到连续模式，内存--&gt;GPU和使能DMA（0x01000201）
+</table>
+<p>注意，H，W，X和Y总是以帧缓存象素为单位，即使你传送的图像数据是其他格式的。如果需要更快的速度，可以使用大一点的块尺寸。如果要发送的字数不是块大小的整数倍，则要单独发送剩下的部分，因为GPU只能接受一个额外的半字。同时注意不要使用大于0x10的块尺寸，因GPU命令缓存只有64字节（＝0x10字）。
+<p>●等待发送命令
+<p>你可以在DMA终了和GPU准备好时发送新的命令
+<table border="1" cellspacing="0">
+  <tr>
+    <td>1
+    <td>等待D2_CHCR的0x18位变为0
+  <tr>
+    <td>2
+    <td>等待GP1的0x1C位变为1
+</table>
