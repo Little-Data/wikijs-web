@@ -1,0 +1,490 @@
+<!--
+title: 控制器
+description: 
+published: 1
+date: 2024-08-24T10:49:20.611Z
+tags: psx, 文档
+editor: code
+dateCreated: 2024-08-24T10:49:20.610Z
+-->
+
+<p>PSX的控制器使用一个9针接头，控制器接口和记忆卡接口是一样的。通过InitPAD、StartPAD、StopPAD、PAD_init和PAD_dr       
+BIOS命令来访问控制器。控制器是一类“智能设备”，通过端口串行交换数据。</p>
+<img src="/psxintroduction/ps_con.gif"/>
+<br>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>
+      针
+    <td>
+      信号
+    <td>
+      方向（基于PSX）
+    <td>
+      有效电平
+    <td>
+      描述
+  <tr>
+    <td>
+      1
+    <td>
+      dat
+    <td>
+      入
+    <td>
+      正
+    <td>
+      <p>从手柄或者记忆卡来的数据
+  <tr>
+    <td>
+      2
+    <td>
+      cmd
+    <td>
+      出
+    <td>
+      正
+    <td>
+      <p>发送到手柄或者记忆卡的命令数据
+  <tr>
+    <td>
+      3
+    <td>
+      +7V
+    <td>
+      --
+    <td>
+      --
+    <td>
+      <p>从CD－ROM来的+7.6V电源
+  <tr>
+    <td>
+      4
+    <td>
+      gnd
+    <td>
+      --
+    <td>
+      --
+    <td>
+      <p>&nbsp;手柄连接器的金属边
+  <tr>
+    <td>
+      5
+    <td>
+      +3V
+    <td>
+      --
+    <td>
+      --
+    <td>
+      <p>从系统来的+3.6V电源
+  <tr>
+    <td>
+      6
+    <td>
+      sel
+    <td>
+      出
+    <td>
+      负
+    <td>
+      <p>选择手柄1、2或者记忆卡
+  <tr>
+    <td>
+      7
+    <td>
+      clk
+    <td>
+      出
+    <td>
+      --
+    <td>
+      <p>数据移位时钟
+  <tr>
+    <td>
+      8
+    <td>
+      --
+    <td>
+      --
+    <td>
+      --
+    <td>
+      <p>N.A.
+  <tr>
+    <td>
+      9
+    <td>
+      ack
+    <td>
+      入
+    <td>
+      负
+    <td>
+      <p>从手柄或者记忆卡来的应答信号
+</table>
+<p>时序在PAD和记忆卡是兼容的。
+<p>0x81是记忆卡，0x01是标准手柄。
+<p>串行数据传输是LSB最先格式。
+<p>数据是下降延输出，PSX是在移位时钟上升延读取。
+<p>超过100微妙没有应答，PSX就认为没有连接。
+<p>时钟脉冲是250KHz。
+<p>最后的数据不需要应答。
+<p>应答信号宽度大于2微妙。
+<p>两个SEL之间的时间是16毫秒。
+<p>　
+<h5>和Pad通讯的格式：</h5>
+<p>从系统向PAD发送0x01命令之后，PAD返回一个字节的PAD ID（0x5A），然后它会发送一个双字节的按键代码和扩展代码。<p>普通手柄&nbsp;&nbsp;&nbsp;   
+时序流--&gt;
+<table border="1" cellspacing="0">
+  <tr>
+    <td>
+    <td>
+      10000000
+    <td>
+      1000010
+    <td>
+      1011010
+    <td>
+      1234567
+    <td>
+      1234567
+  <tr>
+    <td>
+      命令
+    <td>
+      01h
+    <td>
+      42h
+    <td>
+      00h
+    <td>
+      00h
+    <td>
+      00h
+  <tr>
+    <td>
+    <td>
+      xxxxxxxx
+    <td>
+      10000010
+    <td>
+      10100101
+    <td>
+      1234567
+    <td>
+      1234567
+  <tr>
+    <td>
+      数据
+    <td>
+      ----
+    <td>
+      41h
+    <td>
+      5ah
+    <td>
+      SW.1
+    <td>
+      SW.2
+</table>
+
+<p>普通手柄数据内容（拉低）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>
+      字节
+    <td>
+      位7
+    <td>
+      位6
+    <td>
+      位5
+    <td>
+      位4
+    <td>
+      位3
+    <td>
+      位2
+    <td>
+      位1
+    <td>
+      位0
+    <td>
+  <tr>
+    <td>
+      0
+    <td colspan="8">
+      ---
+    <td>
+      空
+  <tr>
+    <td>
+      1
+    <td colspan="8">
+      0x41
+    <td>
+      ‘A’
+  <tr>
+    <td>
+      2
+    <td colspan="8">
+      0x5A
+    <td>
+      ‘Z’
+  <tr>
+    <td>
+      3
+    <td>
+      左
+    <td>
+      下
+    <td>
+      右
+    <td>
+      上
+    <td>
+      开始
+    <td>
+      1
+    <td>
+      1
+    <td>
+      选择
+    <td>
+  <tr>
+    <td>
+      4
+    <td>
+      ■
+    <td>
+      ×
+    <td>
+      ○
+    <td>
+      ▲
+    <td>
+      R1
+    <td>
+      L1
+    <td>
+      R2
+    <td>
+      L2
+    <td>
+</table>
+<p>NEGCON（NAMCO模拟控制器）数据内容（拉低）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>
+      字节
+    <td>
+      位7
+    <td>
+      位6
+    <td>
+      位5
+    <td>
+      位4
+    <td>
+      位3
+    <td>
+      位2
+    <td>
+      位1
+    <td>
+      位0
+    <td colspan="2">
+    <td>
+  <tr>
+    <td>
+      0
+    <td colspan="8">
+      -----
+    <td colspan="2">
+      空
+    <td>
+  <tr>
+    <td>
+      1
+    <td colspan="8">
+      0x23
+    <td colspan="2">
+    <td>
+  <tr>
+    <td>
+      2
+    <td colspan="8">
+      0x5A
+    <td colspan="2">
+      ‘Z’
+    <td>
+  <tr>
+    <td>
+      3
+    <td>
+      左
+    <td>
+      下
+    <td>
+      右
+    <td>
+      上
+    <td>
+      开始
+    <td>
+      1
+    <td>
+      1
+    <td>
+      1
+    <td colspan="2">
+    <td>
+  <tr>
+    <td>
+      4
+    <td>
+      1
+    <td>
+      1
+    <td>
+      A
+    <td>
+      B
+    <td>
+      R
+    <td>
+      1
+    <td>
+      1
+    <td>
+      1
+    <td colspan="2">
+    <td>
+  <tr>
+    <td>
+      5
+    <td colspan="9">
+      摇杆数据&nbsp; 右：0x00，中央：0x80 
+    <td colspan="2">
+  <tr>
+    <td>
+      6
+    <td colspan="9">
+      按钮I的ADC数据(7位无符号)
+    <td colspan="2">
+      00h到7Fh
+  <tr>
+    <td>
+      7
+    <td colspan="9">
+      按钮II的ADC数据
+    <td colspan="2">
+      00h到7Fh
+  <tr>
+    <td>
+      8
+    <td colspan="9">
+      按钮L的ADC数据
+    <td colspan="2">
+      00h到7Fh
+</table>
+<p>＋6和＋8的ADC数据位长度未知（可能是7或者8）
+
+
+<p>鼠标数据内容（拉低）
+<table border="1" cellspacing="0">
+  <tr>
+    <td>
+      字节
+    <td>
+      位7
+    <td>
+      位6
+    <td>
+      位5
+    <td>
+      位4
+    <td>
+      位3
+    <td>
+      位2
+    <td>
+      位1
+    <td>
+      位0
+    <td>
+  <tr>
+    <td>
+      0
+    <td colspan="8">
+      -----
+    <td>
+      空
+  <tr>
+    <td>
+      1
+    <td colspan="8">
+      0x12
+    <td>
+  <tr>
+    <td>
+      2
+    <td colspan="8">
+      0x5A
+    <td>
+      ‘Z’
+  <tr>
+    <td>
+      3
+    <td>
+      1
+    <td>
+      1
+    <td>
+      1
+    <td>
+      1
+    <td>
+      1
+    <td>
+      1
+    <td>
+      1
+    <td>
+      1
+    <td>
+  <tr>
+    <td>
+      4
+    <td>
+      1
+    <td>
+      1
+    <td>
+      1
+    <td>
+      1
+    <td>
+      左
+    <td>
+      右
+    <td>
+      0
+    <td>
+      0
+    <td>
+  <tr>
+    <td>
+      5
+    <td colspan="8">
+      V移动距离&nbsp; 8位带符号&nbsp; 上:+,下:-,停留:00 
+    <td>
+  <tr>
+    <td>
+      6
+    <td colspan="8">
+      H移动距离&nbsp; 8位带符号&nbsp; 上:+,下:-,停留:00 
+    <td>
+</table>
