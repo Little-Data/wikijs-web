@@ -1,0 +1,265 @@
+<!--
+title: BIOS调用
+description: 
+published: 1
+date: 2024-08-24T10:57:36.253Z
+tags: psx, 文档
+editor: code
+dateCreated: 2024-08-24T10:57:36.253Z
+-->
+
+<p>第一列：调用地址
+<p>第二列：调用时0xt1的值
+<p>第三列：函数名字
+<p>参数通过0xa0,1,2,3和0xsp+0x10(当参数多于4个时）
+<p>　
+<p>0x00a0 - 0x0000 - int open(char *name , int mode)  
+<p>0x00a0 - 0x0001 - int lseek(int fd , int offset , int whence)
+<p>0x00a0 - 0x0002 - int read(int fd , char *buf , int nbytes)
+<p>0x00a0 - 0x0003 - int write(int fd , char *buf , int nbytes)
+<p>0x00a0 - 0x0004 - close(int fd)
+<p>0x00a0 - 0x0005 - int ioctl(int fd , int cmd , int arg)
+<p>0x00a0 - 0x0006 - exit()
+<p>0x00a0 - 0x0007 - sys_b0_39()
+<p>0x00a0 - 0x0008 - char getc(int fd)
+<p>0x00a0 - 0x0009 - putc(char c , int fd)
+<p>0x00a0 - 0x000a - todigit
+<p>0x00a0 - 0x000b - double atof(char *s)
+<p>0x00a0 - 0x000c - long strtoul(char *s , char **ptr , int base)
+<p>0x00a0 - 0x000d - unsigned long strtol(char *s , char **ptr , int base)
+<p>0x00a0 - 0x000e - int abs(int val)
+<p>0x00a0 - 0x000f - long labs(long lval)
+<p>0x00a0 - 0x0010 - long atoi(char *s)
+<p>0x00a0 - 0x0011 - int atol(char *s)
+<p>0x00a0 - 0x0012 - atob
+<p>0x00a0 - 0x0013 - int setjmp(jmp_buf *ctx)
+<p>0x00a0 - 0x0014 - longjmp(jmp_buf *ctx , int value)
+<p>0x00a0 - 0x0015 - char *strcat(char *dst , char *src)
+<p>0x00a0 - 0x0016 - char *strncat(char *dst , char *src , int n)
+<p>0x00a0 - 0x0017 - int strcmp(char *dst , char *src)
+<p>0x00a0 - 0x0018 - int strncmp(char *dst , char *src , int n)
+<p>0x00a0 - 0x0019 - char *strcpy(char *dst , char *src)
+<p>0x00a0 - 0x001a - char *strncpy(char *dst , char *src , int n))
+<p>0x00a0 - 0x001b - int strlen(char *s)
+<p>0x00a0 - 0x001c - int index(char *s , int c)
+<p>0x00a0 - 0x001d - int rindex(char *s , int c)
+<p>0x00a0 - 0x001e - char *strchr(char *c , int c)
+<p>0x00a0 - 0x001f - char *strrchr(char *c , int c)
+<p>0x00a0 - 0x0020 - char *strpbrk(char *dst , *src)
+<p>0x00a0 - 0x0021 - int strspn(char *s , char *set)
+<p>0x00a0 - 0x0022 - int strcspn(char *s , char *set)
+<p>0x00a0 - 0x0023 - strtok(char *s , char *set)
+<p>0x00a0 - 0x0024 - strstr(char *s , char *set)
+<p>0x00a0 - 0x0025 - int toupper(int c)
+<p>0x00a0 - 0x0026 - int tolower(int c)
+<p>0x00a0 - 0x0027 - void bcopy(void *src , void *dst , int len)
+<p>0x00a0 - 0x0028 - void bzero(void *ptr , int len)
+<p>0x00a0 - 0x0029 - int bcmp(void *ptr1 , void *ptr2 , int len)
+<p>0x00a0 - 0x002a - memcpy(void *dst , void *src , int n)
+<p>0x00a0 - 0x002b - memset(void *dst , char c , int n)
+<p>0x00a0 - 0x002c - memmove(void *dst , void *src , int n)
+<p>0x00a0 - 0x002d - memcmp(void *dst , void *src , int n)
+<p>0x00a0 - 0x002e - memchr(void *s , int c , int n)
+<p>0x00a0 - 0x002f - int rand()
+<p>0x00a0 - 0x0030 - void srand(unsigned int seed)
+<p>0x00a0 - 0x0031 - void qsort(void *base , int nel , int width , int (*cmp)*void *,void *))
+<p>0x00a0 - 0x0032 - double strtod(char *s , char *endptr)
+<p>0x00a0 - 0x0033 - void *malloc(int size)
+<p>0x00a0 - 0x0034 - free(void *buf)
+<p>0x00a0 - 0x0035 - void *lsearch(void *key , void *base , int belp , int width , int (*cmp)(void * , void *))
+<p>0x00a0 - 0x0036 - void *bsearch( void *key , void *base , int nel , int size , int (*cmp)(void * , void *))
+<p>0x00a0 - 0x0037 - void *calloc(int size , int n)
+<p>0x00a0 - 0x0038 - void *realloc(void *buf , int n)
+<p>0x00a0 - 0x0039 - InitHeap(void *block , int n)
+<p>0x00a0 - 0x003a - _exit()
+<p>0x00a0 - 0x003b - char getchar(int fd)
+<p>0x00a0 - 0x003c - putchar(char c , int fd)
+<p>0x00a0 - 0x003d - char *gets(char *s)
+<p>0x00a0 - 0x003e - puts(char *s)
+<p>0x00a0 - 0x003f - printf(char *fmt , ...)
+<p>0x00a0 - 0x0041 - LoadTest(char *name , XF_HDR *header)
+<p>0x00a0 - 0x0042 - Load(char *name , XF_HDR *header)
+<p>0x00a0 - 0x0043 - Exec(struct EXEC *header , int argc , char **argc)
+<p>0x00a0 - 0x0044 - FlushCache()
+<p>0x00a0 - 0x0045 - void InstallInterruptHandler()
+<p>0x00a0 - 0x0046 - GPU_dw
+<p>0x00a0 - 0x0048 - int SetGPUStatus(int status)
+<p>0x00a0 - 0x0049 - GPU_cw
+<p>0x00a0 - 0x004a - GPU_cwb (not sure)
+<p>0x00a0 - 0x004d - int GetGPUStatus()
+<p>0x00a0 - 0x0049 - GPU_sync
+<p>0x00a0 - 0x0051 - LoadExec(char *name , int , int)
+<p>0x00x0 - 0x0052 - GetSysSp()
+<p>0x00a0 - 0x0054 - _96_init()
+<p>0x00a0 - 0x0055 - _bu_init()
+<p>0x00a0 - 0x0056 - _96_remove()
+<p>0x00a0 - 0x0057 - return 0 (it only does this)
+<p>0x00a0 - 0x0058 - return 0 (it only does this)
+<p>0x00a0 - 0x0059 - return 0 (it only does this)
+<p>0x00a0 - 0x005a - return 0 (it only does this)
+<p>0x00a0 - 0x005b - dev_tty_init
+<p>0x00a0 - 0x005c - dev_tty_open
+<p>0x00a0 - 0x005e - dev_tty_ioctl
+<p>0x00a0 - 0x005f - dev_cd_open
+<p>0x00a0 - 0x0060 - dev_cd_read
+<p>0x00a0 - 0x0061 - dev_cd_close
+<p>0x00a0 - 0x0062 - dev_cd_firstfile
+<p>0x00a0 - 0x0063 - dev_cd_nextfile
+<p>0x00a0 - 0x0064 - dev_cd_chdir
+<p>0x00a0 - 0x0065 - dev_card_open
+<p>0x00a0 - 0x0066 - dev_card_read
+<p>0x00a0 - 0x0067 - dev_card_write
+<p>0x00a0 - 0x0068 - dev_card_close
+<p>0x00a0 - 0x0069 - dev_card_firstfile
+<p>0x00a0 - 0x006a - dev_card_nextfile
+<p>0x00a0 - 0x006b - dev_card_erase
+<p>0x00a0 - 0x006c - dev_card_undelete
+<p>0x00a0 - 0x006d - dev_card_format
+<p>0x00a0 - 0x006e - dev_card_rename
+<p>0x00a0 - 0x0070 - _bu_init
+<p>0x00a0 - 0x0071 - _96_init
+<p>0x00a0 - 0x0072 - _96_remove
+<p>0x00a0 - 0x0078 - _96_CdSeekL
+<p>0x00a0 - 0x007c - _96_CdGetStatus
+<p>0x00a0 - 0x007e - _96_CdRead
+<p>0x00a0 - 0x0085 - _96_CdStop
+<p>0x00a0 - 0x0096 - AddCDROMDevice()
+<p>0x00a0 - 0x0097 - AddMemCardDevice()
+<p>0x00a0 - 0x0098 - DisableKernelIORedirection()
+<p>0x00a0 - 0x0099 - EnableKernelIORedirection()
+<p>0x00a0 - 0x009c - GetConf(int Event , int TCB , int Stack)
+<p>0x00a0 - 0x009d - GetConf(int *Event , int *TCB , int *Stack)
+<p>0x00a0 - 0x009f - SetMem(int size)
+<p>0x00a0 - 0x00a0 - _boot
+<p>0x00a0 - 0x00a1 - SystemError
+<p>0x00a0 - 0x00a2 - EnqueueCdIntr
+<p>0x00a0 - 0x00a3 - DequeueCdIntr
+<p>0x00a0 - 0x00a5 - ReadSector(count,sector,buffer)
+<p>0x00a0 - 0x00a6 - get_cd_status ??
+<p>0x00a0 - 0x00a7 - bufs_cb_0
+<p>0x00a0 - 0x00a8 - bufs_cb_1
+<p>0x00a0 - 0x00a9 - bufs_cb_2
+<p>0x00a0 - 0x00aa - bufs_cb_3
+<p>0x00a0 - 0x00ab - _card_info
+<p>0x00a0 - 0x00ac - _card_load
+<p>0x00a0 - 0x00ad - _card_auto
+<p>0x00a0 - 0x00ae - bufs_cb_4
+<p>0x00a0 - 0x00b2 - do_a_long_jmp()
+<p>0x00a0 - 0x00b4 - (sub_function)
+<p>                   
+&nbsp;&nbsp;&nbsp; 0 - u_long GetKernelDate (date is in 0xYYYYMMDD BCD format)  
+<p>          
+         &nbsp;&nbsp;&nbsp; 1 - u_long   
+GetKernel???? (returns 3 on cex1000 and cex3000)  
+<p>                  
+&nbsp;&nbsp;&nbsp; 2 - char *GetKernelRomVersion()  
+<p>                  
+&nbsp;&nbsp;&nbsp; 3 - ?  
+<p>                  
+&nbsp;&nbsp;&nbsp; 4 - ?  
+<p>                  
+&nbsp;&nbsp;&nbsp; 5 - u_long GetRamSize() (in bytes)  
+<p>                  
+&nbsp;&nbsp;&nbsp; 6 -&gt; F - ??  
+<p> 
+ 
+<p>0x00b0 - 0x0000 - SysMalloc (to malloc  kernel memory) 
+<p>0x00b0 - 0x0007 - DeliverEvent(class , event)
+<p>0x00b0 - 0x0008 - OpenEvent(class , spec , mode , func) (source code is corrected)
+<p>0x00b0 - 0x0009 - CloseEvent(event)
+<p>0x00b0 - 0x000a - WaitEvent(event)
+<p>0x00b0 - 0x000b - TestEvent(event)
+<p>0x00b0 - 0x000c - EnableEvent(event)
+<p>0x00b0 - 0x000d - DisableEvent(event)
+<p>0x00b0 - 0x000e - OpenTh
+<p>0x00b0 - 0x000f - CloseTh
+<p>0x00b0 - 0x0010 - ChangeTh
+<p>0x00b0 - 0x0012 - InitPad
+<p>0x00b0 - 0x0013 - StartPad
+<p>0x00b0 - 0x0014 - StopPAD
+<p>0x00b0 - 0x0015 - PAD_init
+<p>0x00b0 - 0x0016 - u_long PAD_dr()
+<p>0x00b0 - 0x0017 - ReturnFromException
+<p>0x00b0 - 0x0018 - ResetEntryInt
+<p>0x00b0 - 0x0019 - HookEntryInt
+<p>0x00b0 - 0x0020 - UnDeliverEvent(class , event)
+<p>0x00b0 - 0x0032 - int open(char *name,int access)
+<p>0x00b0 - 0x0033 - int lseek(int fd,long pos,int seektype)
+<p>0x00b0 - 0x0034 - int read(int fd,void *buf,int nbytes)
+<p>0x00b0 - 0x0035 - int write(int fd,void *buf,int nbytes)
+<p>0x00b0 - 0x0036 - close(int fd)
+<p>0x00b0 - 0x0037 - int ioctl(int fd , int cmd , int arg)
+<p>0x00b0 - 0x0038 - exit(int exitcode)
+<p>0x00b0 - 0x003a - char getc(int fd)
+<p>0x00b0 - 0x003b - putc(int fd,char ch)
+<p>0x00b0 - 0x003c - char getchar()
+<p>0x00b0 - 0x003d - putchar(char ch)
+<p>0x00b0 - 0x003e - char *gets(char *s)
+<p>0x00b0 - 0x003f - puts(char *s)
+<p>0x00b0 - 0x0040 - cd
+<p>0x00b0 - 0x0041 - format
+<p>0x00b0 - 0x0042 - firstfile
+<p>0x00b0 - 0x0043 - nextfile
+<p>0x00b0 - 0x0044 - rename
+<p>0x00b0 - 0x0045 - delete
+<p>0x00b0 - 0x0046 - undelete
+<p>0x00b0 - 0x0047 - AddDevice (used by AddXXXDevice)
+<p>0x00b0 - 0x0048 - RemoveDevice
+<p>0x00b0 - 0x0049 - PrintInstalledDevices
+<p>0x00b0 - 0x004a - InitCARD
+<p>0x00b0 - 0x004b - StartCARD
+<p>0x00b0 - 0x004c - StopCARD
+<p>0x00b0 - 0x004e - _card_write
+<p>0x00b0 - 0x004f - _card_read
+<p>0x00b0 - 0x0050 - _new_card
+<p>0x00b0 - 0x0051 - Krom2RawAdd
+<p>0x00b0 - 0x0054 - long _get_errno(void)
+<p>0x00b0 - 0x0055 - long _get_error(long fd)
+<p>0x00b0 - 0x0056 - GetC0Table
+<p>0x00b0 - 0x0057 - GetB0Table
+<p>0x00b0 - 0x0058 - _card_chan
+<p>0x00b0 - 0x005b - ChangeClearPad(int)
+<p>0x00b0 - 0x005c - _card_status
+<p>0x00b0 - 0x005d - _card_wait
+<p> 
+<p>0x00c0 - 0x0000 - InitRCnt 
+<p>0x00c0 - 0x0001 - InitException
+<p>0x00c0 - 0x0002 - SysEnqIntRP(int index , long *queue)
+<p>0x00c0 - 0x0003 - SysDeqIntRP(int index , long *queue)
+<p>0x00c0 - 0x0004 - get_free_EvCB_slot()
+<p>0x00c0 - 0x0005 - get_free_TCB_slot()
+<p>0x00c0 - 0x0006 - ExceptionHandler
+<p>0x00c0 - 0x0007 - InstallExceptionHandlers
+<p>0x00c0 - 0x0008 - SysInitMemory
+<p>0x00c0 - 0x0009 - SysInitKMem
+<p>0x00c0 - 0x000a - ChangeClearRCnt
+<p>0x00c0 - 0x000b - SystemError ???
+<p>0x00c0 - 0x000c - InitDefInt
+<p>0x00c0 - 0x0012 - InstallDevices
+<p>0x00c0 - 0x0013 - FlushStdInOutPut
+<p>0x00c0 - 0x0014 - return 0
+<p>0x00c0 - 0x0015 - _cdevinput
+<p>0x00c0 - 0x0016 - _cdevscan
+<p>0x00c0 - 0x0017 - char _circgetc(struct device_buf *circ)
+<p>0x00c0 - 0x0018 - _circputc(char c , struct device_buf *circ)
+<p>0x00c0 - 0x0019 - ioabort(char *str)
+<p>0x00c0 - 0x001b - KernelRedirect(int flag)
+<p>0x00c0 - 0x001c - PatchA0Table
+<p>
+<p>另外有3个的调用方法不像上面的那样：
+<p>MiPS R3000: 
+<p> 
+<p>Exception() { 
+<p>li $a0,0
+<p>syscall
+<p>}
+<p> 
+<p>EnterCriticalSection() { 
+<p>li $a0,1
+<p>syscall
+<p>}
+<p> 
+<p>ExitCriticalSection() { 
+<p>li $a0,2
+<p>syscall
+<p>}</p>
