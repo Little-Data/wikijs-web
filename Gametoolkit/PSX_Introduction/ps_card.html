@@ -1,0 +1,154 @@
+<!--
+title: 记忆卡
+description: 
+published: 1
+date: 2024-08-24T10:52:01.560Z
+tags: psx, 文档
+editor: code
+dateCreated: 2024-08-24T10:52:01.559Z
+-->
+
+<h3>记忆卡格式</h3>
+<p>PSX的记忆卡是128KB的非易失性RAM，分成16块，每块8KB。第一块是头部，用作目录和文件分配表，剩下15块储存数据。<p>数据块包含了程序数据文件名，块名，图标和其他重要信息。PSX通过一种“帧”的办法访问数据，每个块分成64帧，每个128字节。第一个帧（帧0）是文件名，帧1到3是图标（动画的每个帧占用一个帧），剩下的帧储存数据。</p>
+<img src="/psxintroduction/ps_car2.gif"/>
+<h3>项和数据格式</h3>
+<p>
+这个是记忆卡里各种对象的格式。
+<h5>
+文件名</h5>
+<p>国家代码（2字节）＋产品号码（10字节）＋标识符（8字节）。一个产品号码的例子是SCPS－0000。标识符是和游戏名字相关的变量，例如FF8会是FF0800，FF0801。产品的格式是4个字节、一个连字符和5个字符，实际的字符不太重要。对于一个PocketStation程序，产品ID是一个单色图标、一个连字符和一个“P”。<h5>国家代码</h5>
+<p>在日本是BI，欧洲是BE，美国是BA。一个美国PSX可以使用BI国家代码。<h5>标题</h5>
+<p>标题是Shift-JIS格式，最大32字节。可以使用ASCII，因为它是Shift-JIS的子集。<h5>XOR代码</h5>
+<p>这个是检验码，是数据逐个字节XOR后的结果，遵从检验协议。<h5>链接</h5>
+<p>这个是连续的3个字节，用来链接块，形成一个连续的数据块。
+<h5>
+数据大小</h5>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>
+      总记忆体
+    <td>
+      128KB = 13,1072字节 = 0x20000字节 
+  <tr>
+    <td>1 块 
+    <td>8KB = 8192 字节 = 0x2000 字节 
+  <tr>
+    <td>1 帧Frame 
+    <td>128 字节 = 0x80 字节 
+</table>
+<h5>头帧</h5>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>+0x00
+    <td>‘M’(0x4D)
+  <tr>
+    <td>+0x01
+    <td>‘C’(0x43)
+  <tr>
+    <td>+0x02 - 0x7E
+    <td>未使用(0x00)
+  <tr>
+    <td>+0x7F
+    <td>XOR代码(通常是0x0E)
+</table>
+<h5></h5>
+<h5>目录帧</h5>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>+0x00      <p>&nbsp;
+            
+    <td>可用块
+                  <p>&nbsp;&nbsp;&nbsp;&nbsp; 高4位      <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   
+      A - 可用      <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   
+      5 - 部分使用      <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   
+      F - 不可用      <p>&nbsp;&nbsp;&nbsp;&nbsp; 低4位      <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   
+      0 - 未使用      <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   
+      1 - 没有链接，但是即将会有      <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   
+      2 - 中间链接块      <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   
+      3 - 终止链接块      <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   
+      F - 不可用      <p>例子      <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; A0 -  
+      打开块      <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  
+      51 - 使用中，下一个块将有链接      <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 52 -  
+      使用中，这是一个链接，将链接到另一个      <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 53 -  
+      使用中，链接的最后一个      <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FF -  
+      不可用
+  <tr>
+    <td>+0x01 - 0x03 
+    <td>00 00 00<p>保留的时候是FF FF FF  
+  <tr>
+    <td>+0x04 - 0x07
+    <td>使用字节
+                  <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   
+      00 00 00 - 打开块、中间链接块或者链接末尾块<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  
+      块×0x2000 - 没有链接，但将会有链接      <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   
+      (00 20 00 - 将会使用1个块)      <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   
+      (00 40 00 - 将会使用2个块)      <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   
+      (00 E0 01 - 将会使用15个块) 
+  <tr>
+    <td>+0x08-0x09
+    <td>链接顺序块0-14      <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  
+      如果块不在一个链接中或者是链接末尾块，它是0xFFFF&nbsp;
+            
+  <tr>
+    <td>+0x0A-0x0B
+    <td>国家代码(BI, BA, BE)  
+  <tr>
+    <td>+0x0C+0x15
+    <td>产品代码(AAAA-00000)<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;日本SLPS, SCPS  
+      (来自SCEI)<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  
+      美国SLUS, SCUS (来自SCEA)      <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  
+      欧洲SLES, SCES (来自SCEE) 
+  <tr>
+    <td>+0x16-0x1D
+    <td>标识符
+                  <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  
+                  这个号码对于现在玩的游戏是唯一的，表示游戏第一次存在卡中后，每个后续的保存都有相同的标识符，但是从头开始新游戏后，会有一个不同的标识符。
+  <tr>
+    <td>+0x1E-0x7E
+    <td>未使用
+  <tr>
+    <td>0x7F
+    <td>XOR码
+            
+  <tr>
+    <td colspan="2">
+      跟下来的数据为后面的15个块重复，然后是块1的开始
+</table>
+<p>　
+<h5>
+块结构</h5>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>帧0 标题帧<br> 
+      &nbsp; 0x00&nbsp; ‘S’（0x53）<br> 
+      &nbsp; 0x01&nbsp; ‘C’（0x43）<br> 
+      &nbsp; 0x02&nbsp; 图标显示标志<br> 
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 00&nbsp; 没有图标<br> 
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11&nbsp;  
+      图标图画有一个帧（静态的）<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 12&nbsp; 图标有2个帧<br> 
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 13&nbsp; 图标有3个帧<br> 
+      &nbsp; 0x04－0x43标题（Shift-JIS格式，32个字符）<br> 
+      &nbsp; 0x44－0x5F保留（00），用于PocketStation<br> 
+      &nbsp; 0x60－0x7F图标16色调色板数据 
+  <tr>
+    <td>帧1－3&nbsp; 图标帧<br> 
+      &nbsp; 0x00－0x7F 图标位图，一个动画帧＝一个数据帧<br> 
+      &nbsp; 如果没有图标，取而代之的是数据。 
+  <tr>
+    <td>帧4&nbsp;&nbsp;&nbsp;&nbsp; 数据帧<br> 
+      &nbsp; 0x00－0x7F 存档数据 
+</table>
+<p>　
+<h5>连接块
+</h5>
+<table border="1" cellspacing="0">
+  <tr>
+    <td>
+      <p>帧1
+    <td>
+      <p>0x00 - 0x7F 
+    <td>
+      <p>存档数据
+            
+</table>
