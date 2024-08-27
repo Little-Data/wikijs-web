@@ -2,7 +2,7 @@
 title: Gametoolkit 内容首页
 description: 简单介绍 Gametoolkit
 published: 1
-date: 2024-08-27T08:04:56.144Z
+date: 2024-08-27T09:16:30.811Z
 tags: 
 editor: markdown
 dateCreated: 2024-08-06T05:25:30.245Z
@@ -54,6 +54,10 @@ dateCreated: 2024-08-06T05:25:30.245Z
 
 # 更新日志
 **（仅记录新增文件，文档更新不记录）**
+
+2024.08.27
+
+- LS和AVS解包脚本
 
 2024.08.24
 
