@@ -2,7 +2,7 @@
 title: 在Debian 12上安装Dokuwki（使用Apache服务）
 description: 
 published: 1
-date: 2024-08-08T09:27:17.467Z
+date: 2024-09-03T08:20:38.082Z
 tags: debian 12, 服务器
 editor: markdown
 dateCreated: 2024-08-08T09:21:34.984Z
@@ -69,6 +69,8 @@ WinSCP 是一款适用于 Windows 的流行免费 SFTP 和 FTP 客户端，是�
 
 ```bash
 sudo apt update
+```
+```bash
 sudo apt upgrade
 ```
 
@@ -79,6 +81,8 @@ sudo apt upgrade
 > 
 > ```bash
 > sudo apt-get install locales
+> ```
+> ```bash
 > sudo dpkg-reconfigure locales
 > ```
 > 
@@ -153,6 +157,10 @@ tar xzvf <压缩包文件名>
 ```bash
 sudo chown -R www-data:www-data /var/www/html/dokuwiki
 ```
+> 注意，如果在`html`目录下只有`dokuwiki`文件夹的话，那么访问你的域名或IP的话要在后面添加`/dokuwiki`来访问。
+> 例如：访问`<你的域名或IP>/dokuwiki/install.php`来开始安装。
+> 想直接访问的话就需要把`dokuwiki`文件夹里的文件移动到`/var/www/html`下即可。
+{.is-warning}
 
 # 配置Apache
 
@@ -170,13 +178,15 @@ sudo chown -R www-data:www-data /var/www/html/dokuwiki
 <Directory /var/www/>
 
 Options Indexes FollowSymLinks
-AllowOverride All
-Require all granted
+AllowOverride None
+Require all denied
 
 </Directory>
 ```
 
-将`AllowOverride All`改为`AllowOverride None`
+将`AllowOverride None`改为`AllowOverride All`
+
+将`Require all denied`改为`Require all granted`
 
 启用rewrite模块：
 
@@ -186,7 +196,7 @@ a2enmod rewrite
 
 [重启Apache](#重启apache)
 
-访问`<你的域名或IP>/install.php`来开始安装。
+访问`<你的域名或IP>/install.php`来开始安装，确保你已经看了[配置DokuWiki](#配置DokuWiki)里的注意。
 
 # 配置ssl（https访问）
 
