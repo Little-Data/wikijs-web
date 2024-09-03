@@ -2,7 +2,7 @@
 title: 在Debian 12上安装Dokuwki（使用Apache服务）
 description: 
 published: 1
-date: 2024-09-03T08:20:38.082Z
+date: 2024-09-03T08:23:07.953Z
 tags: debian 12, 服务器
 editor: markdown
 dateCreated: 2024-08-08T09:21:34.984Z
@@ -196,7 +196,7 @@ a2enmod rewrite
 
 [重启Apache](#重启apache)
 
-访问`<你的域名或IP>/install.php`来开始安装，确保你已经看了[配置DokuWiki](#配置DokuWiki)里的注意。
+访问`<你的域名或IP>/install.php`来开始安装，确保你已经看了[配置DokuWiki](#下载和配置DokuWiki)里的注意。
 
 # 配置ssl（https访问）
 
