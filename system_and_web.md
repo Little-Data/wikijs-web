@@ -2,7 +2,7 @@
 title: 系统与网站管理 内容首页
 description: 
 published: 1
-date: 2024-08-29T11:30:29.991Z
+date: 2024-10-19T15:47:44.544Z
 tags: 
 editor: markdown
 dateCreated: 2024-08-08T07:30:07.581Z
@@ -19,4 +19,5 @@ dateCreated: 2024-08-08T07:30:07.581Z
 - [在Debian 12上安装Dokuwki（使用Apache服务）](/system_and_web/Install_Dokuwki_on_Debian_12)
 - [Python脚本](/system_and_web/Python_scripts)
 - [批处理脚本](/system_and_web/batch_scripts)
+- [升级Wiki.js2.0](/system_and_web/update_wikijs2)
 {.links-list}
