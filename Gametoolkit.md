@@ -2,7 +2,7 @@
 title: Gametoolkit 内容首页
 description: 简单介绍 Gametoolkit
 published: 1
-date: 2024-08-27T09:16:30.811Z
+date: 2024-10-23T14:32:19.527Z
 tags: 
 editor: markdown
 dateCreated: 2024-08-06T05:25:30.245Z
@@ -31,6 +31,7 @@ dateCreated: 2024-08-06T05:25:30.245Z
 
 - [计算机文件属性汇总*用来快速查询文件属性*](/Gametoolkit/Summary_of_Computer_File_Attributes)
 - [PSX介绍中文版](/Gametoolkit/PSX_Introduction)
+- [Python处理脚本*更好的解包辅助*](/Gametoolkit/Python_scripts)
 {.links-list}
 
 # 常用资源
@@ -54,6 +55,12 @@ dateCreated: 2024-08-06T05:25:30.245Z
 
 # 更新日志
 **（仅记录新增文件，文档更新不记录）**
+
+2024.10.23
+
+- PSound
+- Pmftools FFMPEG 更新
+- (新增了一些脚本)
 
 2024.08.27
 
