@@ -2,7 +2,7 @@
 title: 主页
 description: 您看到的第一个页面
 published: 1
-date: 2024-08-02T13:11:04.212Z
+date: 2024-10-23T12:07:44.618Z
 tags: 
 editor: markdown
 dateCreated: 2024-07-31T14:45:47.539Z
@@ -24,6 +24,18 @@ dateCreated: 2024-07-31T14:45:47.539Z
 {.links-list}
 
 太复杂？可以使用`Visual Editor`来满足基本需求。
+
+# GitHub下载加速
+由于GitHub的服务器在境外，文件下载可能会失败。在这里我提供一些下载加速链接，更多的加速网站可以在网上搜索。
+使用方法很简单，只需复制想要下载文件的链接到网站里即可。
+
+- [GitHub 文件加速](https://gh.jasonzeng.dev)
+- [GitHub Proxy](https://ghp.ci)
+- [Github文件加速*Mintimate在线工具箱*](https://tool.mintimate.cn/gh)
+- [GitHub 文件加速](https://github.moeyy.xyz)
+- [GitHub 文件加速*Sonder*](https://github.akams.cn)
+- [GitHub 文件加速](https://gitdl.cn)
+{.links-list}
 
 # 友情链接
 
