@@ -2,7 +2,7 @@
 title: Python处理脚本
 description: 更好的解包辅助
 published: 1
-date: 2024-10-23T14:27:09.842Z
+date: 2024-10-24T10:33:38.597Z
 tags: python, 游戏工具, 脚本
 editor: markdown
 dateCreated: 2024-10-23T14:27:09.842Z
@@ -29,6 +29,38 @@ from tkinter import filedialog
 import subprocess
 import os
 
+def extract_partition(file_path, rom_folder, partition_number):
+    # 提取指定分区
+    partition_folder = os.path.join(rom_folder, f'cfa{partition_number}')
+    os.makedirs(partition_folder, exist_ok=True)
+    
+    partition_command = f'3dstool -xvt{partition_number}f cci "{partition_folder}\\{partition_number}.cfa" "{file_path}"'
+    partition_process = subprocess.run(partition_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    print(partition_process.stdout)
+
+    # 提取分区头和romfs
+    cfa_command = f'3dstool -xvtf cfa "{partition_folder}\\{partition_number}.cfa" --header "{partition_folder}\\ncchheader.bin" --romfs "{partition_folder}\\romfs.bin"'
+    cfa_process = subprocess.run(cfa_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    print(cfa_process.stdout)
+
+    # 解压romfs
+    romfs_bin_path = os.path.join(partition_folder, 'romfs.bin')
+    romfs_folder = os.path.join(partition_folder, 'romfs')
+    romfs_command = f'3dstool -xvtf romfs "{romfs_bin_path}" --romfs-dir "{romfs_folder}"'
+    romfs_process = subprocess.run(romfs_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    print(romfs_process.stdout)
+
+def extract_exefs(exefs_bin_path, exh_bin_path, exefs_folder):
+    # 检查exefs是否需要-u参数
+    with open(exh_bin_path, 'rb') as exh_file:
+        exh_data = exh_file.read(0x10)
+        use_u = exh_data[0x0D] == 1
+
+    # 提取exefs
+    exefs_command = f'3dstool -{"xvtfu" if use_u else "xvtf"} exefs "{exefs_bin_path}" --exefs-dir "{exefs_folder}"'
+    exefs_process = subprocess.run(exefs_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    print(exefs_process.stdout)
+
 def extract_3ds():
     # 获取用户选择的文件
     file_path = filedialog.askopenfilename(filetypes=[("3DS files", "*.3ds")])
@@ -44,23 +76,38 @@ def extract_3ds():
     os.makedirs(rom_folder, exist_ok=True)
     
     # 执行3dstool命令提取cci
-    cci_command = f'3dstool -xvt0f cci {rom_folder}\\0.cxi "{file_path}" --header {rom_folder}\\ncsdheader.bin'
+    cci_command = f'3dstool -xvt0f cci "{rom_folder}\\0.cxi" "{file_path}" --header "{rom_folder}\\ncsdheader.bin"'
     cci_process = subprocess.run(cci_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     print(cci_process.stdout)
-    
-    # 创建cxi0子文件夹
+
+    # 检查未解压的分区并提取
+    if 'INFO: partition 1' in cci_process.stdout:
+        extract_partition(file_path, rom_folder, '1')
+    if 'INFO: partition 7' in cci_process.stdout:
+        extract_partition(file_path, rom_folder, '7')
+
+    # 创建cxi0子文件夹并提取cxi/cfa
     cxi0_folder = os.path.join(rom_folder, 'cxi0')
     os.makedirs(cxi0_folder, exist_ok=True)
-
-    # 执行3dstool命令提取cxi文件内容
-    cxi_command = f'3dstool -xvtf cxi {rom_folder}\\0.cxi --header {cxi0_folder}\\ncchheader.bin --exh {cxi0_folder}\\exh.bin --plain {cxi0_folder}\\plain.bin --exefs {cxi0_folder}\\exefs.bin --romfs {cxi0_folder}\\romfs.bin'
+    
+    cxi_command = f'3dstool -xvtf cxi "{rom_folder}\\0.cxi" --header "{cxi0_folder}\\ncchheader.bin" --exh "{cxi0_folder}\\exh.bin" --plain "{cxi0_folder}\\plain.bin" --exefs "{cxi0_folder}\\exefs.bin" --romfs "{cxi0_folder}\\romfs.bin"'
     cxi_process = subprocess.run(cxi_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    print(cxi_process.stdout)
+    print(cci_process.stdout)
 
-    # 执行3dstool命令解压romfs.bin
-    romfs_command = f'3dstool -xvtf romfs {cxi0_folder}\\romfs.bin --romfs-dir {cxi0_folder}\\romfs'
+    # 解压cxi0文件夹中的romfs.bin和exefs.bin
+    romfs_bin_path = os.path.join(cxi0_folder, 'romfs.bin')
+    exefs_bin_path = os.path.join(cxi0_folder, 'exefs.bin')
+    exh_bin_path = os.path.join(cxi0_folder, 'exh.bin')
+    romfs_folder = os.path.join(cxi0_folder, 'romfs')
+    exefs_folder = os.path.join(cxi0_folder, 'exefs')
+    
+    # 解压romfs.bin
+    romfs_command = f'3dstool -xvtf romfs "{romfs_bin_path}" --romfs-dir "{romfs_folder}"'
     romfs_process = subprocess.run(romfs_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     print(romfs_process.stdout)
+
+    # 解压exefs.bin
+    extract_exefs(exefs_bin_path, exh_bin_path, exefs_folder)
 
     print(f"Extraction complete for {file_name}")
 
