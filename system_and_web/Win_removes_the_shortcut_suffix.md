@@ -2,7 +2,7 @@
 title: Win去掉创建快捷方式时的「-快捷方式」后缀
 description: 
 published: 1
-date: 2024-08-02T14:41:40.467Z
+date: 2024-11-04T08:38:02.470Z
 tags: windows, 注册表, 系统调整
 editor: markdown
 dateCreated: 2024-08-02T14:41:40.467Z
@@ -28,5 +28,8 @@ HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer
 CMD（管理员身份）执行以下命令也可以一键完成。
 
 ```batch
-reg add"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer"/v "link" /d 00000000 /t REG_binary /f
+reg add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer" /v "link" /d 00000000 /t REG_binary /f
 ```
+
+> 不管使用哪种方法，一定要重启系统或`explorer`，否则重新操作！
+{.is-warning}
