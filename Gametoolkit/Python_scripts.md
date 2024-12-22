@@ -2,7 +2,7 @@
 title: Python处理脚本
 description: 更好的解包辅助
 published: 1
-date: 2024-10-24T10:33:38.597Z
+date: 2024-12-22T10:15:47.103Z
 tags: python, 游戏工具, 脚本
 editor: markdown
 dateCreated: 2024-10-23T14:27:09.842Z
@@ -403,6 +403,399 @@ def main():
 
     extract_webps(directory_path)
     print("WebP 文件提取完成。")
+
+if __name__ == "__main__":
+    main()
+```
+# 万能二进制提取
+![wn_1.png](/python_scripts/wn_1.png)
+![wn_2.png](/python_scripts/wn_2.png)
+`万能二进制提取.py`
+```python
+import os
+import sys
+
+def extract_content_normal(file_path, start_sequence_bytes, end_sequence=None, output_format='bin'):
+    try:
+        with open(file_path, 'rb') as f:
+            content = f.read()
+    except IOError as e:
+        print(f"无法读取文件 {file_path}，错误信息：{e}")
+        return
+
+    count = 0
+    start_index = 0
+    notes = []
+
+    while start_index < len(content):
+        start_index = content.find(start_sequence_bytes, start_index)
+        if start_index == -1:
+            print(f"No more start sequences found in {file_path}")
+            break
+
+        end_index = get_end_index(content, start_index, end_sequence, start_sequence_bytes)
+
+        extracted_data = content[start_index:end_index]
+        new_filename = f"{os.path.splitext(os.path.basename(file_path))[0]}_{count}.{output_format}"
+        new_filepath = os.path.join(os.path.dirname(file_path), new_filename)
+        try:
+            with open(new_filepath, 'wb') as new_file:
+                new_file.write(extracted_data)
+        except IOError as e:
+            print(f"无法写入文件 {new_filepath}，错误信息：{e}")
+            continue
+        print(f"Extracted content saved as: {new_filepath}")
+
+        notes.append(f"File: {new_filepath}, Start Address: {start_index}, End Address: {end_index}")
+        count += 1
+        start_index = end_index
+
+    save_notes(file_path, notes)
+
+def extract_content_repeat(file_path, start_sequence_bytes, end_sequence=None, output_format='bin', min_repeat_count=0):
+    try:
+        with open(file_path, 'rb') as f:
+            content = f.read()
+    except IOError as e:
+        print(f"无法读取文件 {file_path}，错误信息：{e}")
+        return
+
+    count = 0
+    start_index = 0
+    notes = []
+
+    while start_index < len(content):
+        start_index = content.find(start_sequence_bytes, start_index)
+        if start_index == -1:
+            print(f"No more start sequences found in {file_path}")
+            break
+
+        end_index = find_end_index(content, start_index, end_sequence, min_repeat_count, start_sequence_bytes)
+
+        extracted_data = content[start_index:end_index]
+        new_filename = f"{os.path.splitext(os.path.basename(file_path))[0]}_{count}.{output_format}"
+        new_filepath = os.path.join(os.path.dirname(file_path), new_filename)
+        try:
+            with open(new_filepath, 'wb') as new_file:
+                new_file.write(extracted_data)
+        except IOError as e:
+            print(f"无法写入文件 {new_filepath}，错误信息：{e}")
+            continue
+        print(f"Extracted content saved as: {new_filepath}")
+
+        notes.append(f"File: {new_filepath}, Start Address: {start_index}, End Address: {end_index}")
+        count += 1
+        start_index = end_index
+
+    save_notes(file_path, notes)
+
+def extract_before_address(file_path, target_address, start_sequence_bytes, end_sequence=None, output_format='bin',
+                            min_repeat_count=0):
+    try:
+        with open(file_path, 'rb') as f:
+            content = f.read()
+    except IOError as e:
+        print(f"无法读取文件 {file_path}，错误信息：{e}")
+        return
+
+    target_index = int(target_address, 16)
+    if target_index > len(content):
+        print(f"指定地址 {target_address} 超出文件范围，无法提取。")
+        return
+
+    count = 0
+    start_index = 0
+    notes = []
+
+    while start_index < len(content) and start_index < target_index:
+        start_index = content.find(start_sequence_bytes, start_index)
+        if start_index == -1:
+            print(f"No more start sequences found in {file_path} before the target address")
+            break
+
+        end_index = get_end_index(content, start_index, end_sequence, start_sequence_bytes)
+
+        extracted_data = content[start_index:end_index]
+        new_filename = f"{os.path.splitext(os.path.basename(file_path))[0]}_{count}.{output_format}"
+        new_filepath = os.path.join(os.path.dirname(file_path), new_filename)
+        try:
+            with open(new_filepath, 'wb') as new_file:
+                new_file.write(extracted_data)
+        except IOError as e:
+            print(f"无法写入文件 {new_filepath}，错误信息：{e}")
+            continue
+        print(f"Extracted content saved as: {new_filepath}")
+
+        notes.append(f"File: {new_filepath}, Start Address: {start_index}, End Address: {end_index}")
+        count += 1
+        start_index = end_index
+
+    save_notes(file_path, notes)
+
+def extract_after_address(file_path, target_address, start_sequence_bytes, end_sequence=None, output_format='bin',
+                           min_repeat_count=0):
+    try:
+        with open(file_path, 'rb') as f:
+            content = f.read()
+    except IOError as e:
+        print(f"无法读取文件 {file_path}，错误信息：{e}")
+        return
+
+    target_index = int(target_address, 16)
+    if target_index > len(content):
+        print(f"指定地址 {target_address} 超出文件范围，无法提取。")
+        return
+
+    count = 0
+    start_index = target_index
+    notes = []
+
+    while start_index < len(content):
+        start_index = content.find(start_sequence_bytes, start_index)
+        if start_index == -1:
+            print(f"No more start sequences found in {file_path} after the target address")
+            break
+
+        end_index = get_end_index(content, start_index, end_sequence, start_sequence_bytes)
+
+        extracted_data = content[start_index:end_index]
+        new_filename = f"{os.path.splitext(os.path.basename(file_path))[0]}_{count}.{output_format}"
+        new_filepath = os.path.join(os.path.dirname(file_path), new_filename)
+        try:
+            with open(new_filepath, 'wb') as new_file:
+                new_file.write(extracted_data)
+        except IOError as e:
+            print(f"无法写入文件 {new_filepath}，错误信息：{e}")
+            continue
+        print(f"Extracted content saved as: {new_filepath}")
+
+        notes.append(f"File: {new_filepath}, Start Address: {start_index}, End Address: {end_index}")
+        count += 1
+        start_index = end_index
+
+    save_notes(file_path, notes)
+
+def get_extraction_parameters():
+    start_sequence_input = input("请输入起始序列的字节值，以空格分隔（也可输入类似00*16）: ")
+    start_sequence_bytes = parse_start_sequence(start_sequence_input)
+    end_sequence_input = input("请输入结束序列字节值（以空格分割，使用*表示重复，如00*4，直接回车跳过）: ")
+    use_repeat_method = False
+    min_repeat_count = 0
+    if end_sequence_input:
+        end_sequence_bytes = parse_end_sequence(end_sequence_input)
+        if '*' not in end_sequence_input and len(end_sequence_bytes) == 1:
+            try:
+                min_repeat_count = int(input("请输入最小重复字节数量作为结束条件: "))
+                use_repeat_method = True
+            except:
+                pass
+    else:
+        end_sequence_bytes = None
+    output_format = input("请输入输出文件格式 (例如: bin): ")
+    return start_sequence_bytes, end_sequence_bytes, use_repeat_method, min_repeat_count, output_format
+
+def get_end_index(content, start_index, end_sequence, start_sequence_bytes):
+    if end_sequence:
+        end_index = content.find(end_sequence, start_index + len(start_sequence_bytes))
+        if end_index == -1:
+            end_index = len(content)
+        else:
+            end_index += len(end_sequence)
+    else:
+        next_start_index = content.find(start_sequence_bytes, start_index + len(start_sequence_bytes))
+        end_index = next_start_index if next_start_index!= -1 else len(content)
+    return end_index
+
+def save_notes(file_path, notes):
+    notes_filename = f"{os.path.splitext(os.path.basename(file_path))[0]}_notes.txt"
+    notes_filepath = os.path.join(os.path.dirname(file_path), notes_filename)
+    with open(notes_filepath, 'w') as notes_file:
+        for note in notes:
+            notes_file.write(note + '\n')
+    print(f"Notes saved as: {notes_filepath}")
+
+def parse_start_sequence(start_sequence_input):
+    if '*' in start_sequence_input:
+        parts = start_sequence_input.split('*')
+        byte_value = bytes.fromhex(parts[0].replace(' ', ''))
+        repeat_count = int(parts[1])
+        return byte_value * repeat_count
+    else:
+        return bytes.fromhex(start_sequence_input.replace(' ', ''))
+
+def parse_end_sequence(end_sequence_input):
+    parts = end_sequence_input.split()
+    result = b""
+    for part in parts:
+        if '*' in part:
+            sub_parts = part.split('*')
+            byte_value = bytes.fromhex(sub_parts[0].replace(' ', ''))
+            repeat_count = int(sub_parts[1])
+            result += byte_value * repeat_count
+        else:
+            result += bytes.fromhex(part.replace(' ', ''))
+    return result
+
+def find_end_index(content, start_index, end_sequence, min_repeat_count, start_sequence_bytes):
+    if end_sequence is None:
+        next_start_index = content.find(start_sequence_bytes, start_index + 1)
+        if next_start_index == -1:
+            return len(content)
+        else:
+            return next_start_index
+    else:
+        if min_repeat_count == 0:
+            end_index = content.find(end_sequence, start_index + 1)
+            if end_index == -1:
+                return len(content)
+            else:
+                return end_index + len(end_sequence)
+        else:
+            byte_value = end_sequence[0]
+            repeat_count = 0
+            current_index = start_index + 1
+            while current_index < len(content):
+                if content[current_index] == byte_value:
+                    repeat_count += 1
+                    if repeat_count >= min_repeat_count and (min_repeat_count == 0 or
+                                                            content[current_index + 1]!= byte_value):
+                        return current_index + 1
+                else:
+                    repeat_count = 0
+                current_index += 1
+            return len(content)
+
+def main():
+    directory_path = input("请输入要处理的文件夹路径: ")
+    if not os.path.isdir(directory_path):
+        print(f"错误: {directory_path} 不是一个有效的目录。")
+        sys.exit(1)
+
+    extract_mode = input("请选择提取模式（1:正常提取，2:提取指定地址前的内容，3:提取指定地址后的内容）: ")
+
+    if extract_mode == '2':
+        target_address = input("请输入指定地址（例如: 0x00006F20）: ")
+        start_sequence_bytes, end_sequence_bytes, use_repeat_method, min_repeat_count, output_format = get_extraction_parameters()
+        for root, dirs, files in os.walk(directory_path):
+            for file in files:
+                file_path = os.path.join(root, file)
+                print(f"Processing file: {file_path}")
+                extract_before_address(file_path, target_address, start_sequence_bytes, end_sequence_bytes,
+                                       output_format, min_repeat_count)
+
+    elif extract_mode == '3':
+        target_address = input("请输入指定地址（例如: 0x00006F20）: ")
+        start_sequence_bytes, end_sequence_bytes, use_repeat_method, min_repeat_count, output_format = get_extraction_parameters()
+        for root, dirs, files in os.walk(directory_path):
+            for file in files:
+                file_path = os.path.join(root, file)
+                print(f"Processing file: {file_path}")
+                extract_after_address(file_path, target_address, start_sequence_bytes, end_sequence_bytes,
+                                      output_format, min_repeat_count)
+    elif extract_mode == '1':
+        start_sequence_bytes, end_sequence_bytes, use_repeat_method, min_repeat_count, output_format = get_extraction_parameters()
+        for root, dirs, files in os.walk(directory_path):
+            for file in files:
+                file_path = os.path.join(root, file)
+                print(f"Processing file: {file_path}")
+                if use_repeat_method:
+                    extract_content_repeat(file_path, start_sequence_bytes, end_sequence_bytes, output_format,
+                                           min_repeat_count)
+                else:
+                    extract_content_normal(file_path, start_sequence_bytes, end_sequence_bytes, output_format)
+    else:
+        print("无效的提取模式选择，请重新运行脚本并正确选择。")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+```
+# RIFF-RIFX文件批量提取
+```python
+import os
+import struct
+
+# 用于记录用户输入的音频格式，初始值为None
+user_audio_format = None
+# 用于标记是否已经输入过音频格式，初始值为False
+audio_format_entered = False
+
+def extract_data_blocks(file_content):
+    riff_header = b'\x52\x49\x46\x46'
+    rifx_header = b'\x52\x49\x46\x58'
+    start_index = 0
+    while True:
+        riff_index = file_content.find(riff_header, start_index)
+        rifx_index = file_content.find(rifx_header, start_index)
+        if riff_index == -1 and rifx_index == -1:
+            break
+        current_index = riff_index if riff_index!= -1 and (rifx_index == -1 or riff_index < rifx_index) else rifx_index
+        header = riff_header if current_index == riff_index else rifx_header
+
+        file_size = struct.unpack('<I', file_content[current_index + 4:current_index + 8])[0]
+        file_size = (file_size + 1) & ~1
+
+        block_start = current_index + 8
+        wave_format = b'\x57\x41\x56\x45\x66\x6D\x74'
+        block_end_index = file_content.find(rifx_header if header == rifx_header else riff_header, current_index + file_size + 8)
+        if block_end_index == -1:
+            block_end_index = len(file_content)
+        while block_start < block_end_index:
+            current_block = file_content[block_start:block_start + 7]
+            if current_block == b'\x46\x45\x56\x20\x46\x4D\x54':
+                yield ('bank', file_content[current_index:current_index + file_size + 8])
+            elif current_block == b'\x57\x45\x42\x50\x56\x50\x38':
+                yield ('webp', file_content[current_index:current_index + file_size + 8])
+            elif current_block == b'\x58\x57\x4D\x41\x66\x6D\x74':
+                yield ('xwma', file_content[current_index:current_index + file_size + 8])
+            elif current_block == wave_format:
+                if header == riff_header:
+                    global audio_format_entered
+                    global user_audio_format
+                    if not audio_format_entered:
+                        valid_formats = ['at3', 'at9', 'wav', 'wem', 'xma']
+                        user_audio_format = input(f"请输入要保存的格式({', '.join(valid_formats)}): ")
+                        while user_audio_format not in valid_formats:
+                            user_audio_format = input(f"无效格式，请重新输入要保存的格式({', '.join(valid_formats)}): ")
+                        audio_format_entered = True
+                    yield (user_audio_format, file_content[current_index:current_index + file_size + 8])
+                else:
+                    yield ('wem', file_content[current_index:current_index + file_size + 8])
+            block_start += 7
+        start_index = current_index + file_size + 8
+
+def extract_from_file(file_path):
+    with open(file_path, 'rb') as file:
+        file_content = file.read()
+
+    data_generator = extract_data_blocks(file_content)
+    count = 0
+    base_filename = os.path.splitext(os.path.basename(file_path))[0]
+    for target_extension, data in data_generator:
+        extracted_filename = f"{base_filename}_{count}.{target_extension}"
+        extracted_path = os.path.join(os.path.dirname(file_path), extracted_filename)
+        os.makedirs(os.path.dirname(extracted_path), exist_ok=True)
+        with open(extracted_path, 'wb') as output_file:
+            output_file.write(data)
+        print(f"Extracted content saved as: {extracted_path}")
+        count += 1
+
+def extract(directory_path):
+    for root, dirs, files in os.walk(directory_path):
+        for file in files:
+            if file.endswith('.py'):
+                continue
+            file_path = os.path.join(root, file)
+            extract_from_file(file_path)
+
+def main():
+    directory_path = input("请输入要处理的文件夹路径: ")
+    if not os.path.isdir(directory_path):
+        print(f"错误: {directory_path} 不是一个有效的目录。")
+        return
+
+    extract(directory_path)
+    print("文件提取完成。")
 
 if __name__ == "__main__":
     main()
